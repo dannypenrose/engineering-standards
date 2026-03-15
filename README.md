@@ -106,6 +106,14 @@ These standards are modelled on engineering practices at leading technology orga
 - Framework-specific patterns for **Next.js**, **NestJS**, **ASP.NET Core**, **FastAPI**, **Expo**, **Tauri**, and more
 - Full lifecycle: coding &rarr; testing &rarr; security &rarr; deployment &rarr; observability &rarr; incident response
 
+## Disclaimer
+
+These standards have been developed and refined by a software engineering professional with 20+ years of industry experience. However, when used as context for AI-assisted development, it is important to understand that large language models are probabilistic systems. They can misinterpret rules, omit requirements, apply standards from the wrong context, or generate output that appears correct but deviates from the standard in subtle ways.
+
+**These standards improve the quality of AI-generated output -- they do not guarantee it.** No set of instructions, however thorough, can eliminate the inherent limitations of current AI models. All AI-assisted output should be reviewed by an experienced software engineer before being committed, merged, or deployed. Treat AI as a capable assistant, not an authority.
+
+The author accepts no liability for defects, security vulnerabilities, or other issues arising from code produced with the assistance of these standards.
+
 ## License
 
 This work is licensed under [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/).
