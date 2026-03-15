@@ -86,8 +86,9 @@ Implementation standards for Python projects:
 
 ### [AI-Assisted Development](./ai)
 
-Standards for AI-assisted development:
+Standards for AI-assisted development across all agentic coding platforms:
 
+- Agentic coding standards (platform-agnostic principles and skills-based enforcement)
 - Claude Code best practices
 - Prompt engineering guidelines
 - AI code review patterns
@@ -100,7 +101,7 @@ These standards are modelled on engineering practices at leading technology orga
 
 1. **Reference during development** - Consult the relevant standard before starting work
 2. **Follow the requirements** - These are mandatory standards, not suggestions
-3. **Use as Claude Code context** - Standards are loaded as context for AI-assisted development
+3. **Enforce via agent skills** - Standards are loaded automatically by [agent skills](https://github.com/dannypenrose/agent-skills) during AI-assisted development
 4. **Propose changes via PR** - If a standard needs updating, submit a pull request with justification
 
 ## Contributing

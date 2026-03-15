@@ -39,7 +39,7 @@ These standards are opinionated, production-tested, and designed to enforce cons
 
 | Category | Documents | Covers |
 |----------|-----------|--------|
-| [AI](./ai) | 3 | Claude Code best practices, prompt engineering guidelines, AI code review patterns |
+| [AI](./ai) | 4 | Agentic coding standards (platform-agnostic), Claude Code best practices, prompt engineering guidelines, AI code review patterns |
 
 ## Design Principles
 
@@ -99,7 +99,7 @@ These standards are modelled on engineering practices at leading technology orga
 
 ## At a Glance
 
-- **50** standards documents
+- **51** standards documents
 - **8** categories
 - **~27,500** lines of actionable guidance
 - Covers **TypeScript**, **.NET**, and **Python** stacks

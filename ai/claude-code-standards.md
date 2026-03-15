@@ -1,5 +1,7 @@
 # Claude Code Standards
 
+> This is the Claude Code-specific implementation guide. For platform-agnostic principles that apply to all AI coding agents, see [Agentic Coding Standards](./agentic-coding-standards).
+
 This standard defines best practices for using Claude Code across all projects, ensuring consistent AI-assisted development workflows aligned with enterprise engineering practices.
 
 ## Core Principles
