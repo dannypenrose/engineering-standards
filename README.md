@@ -1,5 +1,7 @@
 # Engineering Standards
 
+[![License: CC BY-NC-ND 4.0](https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-nd/4.0/)
+
 A comprehensive collection of 50 engineering standards covering the full software development lifecycle -- from coding conventions and API design through to security, reliability, deployment, and AI-assisted development.
 
 These standards are opinionated, production-tested, and designed to enforce consistency across projects regardless of team size. They draw on practices from leading technology organisations and align with established frameworks including OWASP, NIST, W3C (WCAG), and the SRE discipline.
