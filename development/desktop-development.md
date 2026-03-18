@@ -257,6 +257,161 @@ fn is_safe_path(path: &str) -> bool {
 
 ---
 
+## Connected Mode: Known Limitations & Workarounds
+
+Connected desktop apps (wrapping a remote web application) face several platform constraints that require specific workarounds. These patterns were established building the Forge Hub desktop app.
+
+### Google OAuth Blocked in WebViews
+
+Google explicitly blocks OAuth sign-in from embedded webviews (WKWebView on macOS, WebView2 on Windows) with `403: disallowed_useragent`. This is Google policy — Electron apps (Slack, Discord, Notion) all handle Google auth via the system browser.
+
+**Workaround:** Hide the Google sign-in button via injected JS. Users sign in with email/password in the desktop app. For full Google OAuth support, use `tauri-plugin-oauth` with a localhost redirect server to delegate to the system browser (same pattern as standalone auth).
+
+### Data URL Windows Have No Valid Origin
+
+Windows created with `data:` URLs or `WebviewUrl::CustomProtocol("data:...")` get `Origin: null`, which breaks:
+- **Tauri IPC** — `invoke()` calls fail with "Origin header is not a valid URL"
+- **CORS** — API calls from JS are rejected by backends
+
+**Workaround:** Load a lightweight real URL from the target domain (e.g. the favicon), then replace the page content via `document.write()` in the `on_page_load` handler:
+
+```rust
+// Load a real URL so the window gets a valid origin
+let url = WebviewUrl::External(
+    "https://your-app.example.com/favicon.ico".parse().unwrap()
+);
+
+// Then in the on_page_load plugin handler:
+if window.label() == "quick-add" {
+    let js = format!(
+        "document.open(); document.write({}); document.close();",
+        serde_json::to_string(MY_HTML).unwrap_or_default()
+    );
+    let _ = window.eval(&js);
+}
+```
+
+### Title Bar Style Cannot Be Set via JSON Config
+
+Setting `titleBarStyle` in `tauri.conf.json` causes a schema validation error in Tauri CLI 2.10.x:
+
+```
+"overlay" is not valid under any of the schemas listed in the 'oneOf' keyword
+```
+
+**Workaround:** Set it programmatically in the Rust `setup` hook:
+
+```rust
+.setup(|app| {
+    if let Some(window) = app.get_webview_window("main") {
+        #[cfg(target_os = "macos")]
+        {
+            let _ = window.set_title_bar_style(TitleBarStyle::Overlay);
+        }
+    }
+    Ok(())
+})
+```
+
+### App Name Shows Underscores in Dev Mode
+
+During `tauri dev`, macOS shows the Cargo crate name (e.g. `forge_hub_desktop`) in the dock and Cmd+Tab. The `productName` in `tauri.conf.json` is only used in production builds (`tauri build`) where the `.app` bundle is created.
+
+### Auth Token Flow for Desktop-Specific Features
+
+When adding features that need authenticated API access (e.g. a global quick-add window), the recommended pattern is:
+
+1. **Main webview pushes the auth token** to Tauri managed state periodically
+2. **Desktop feature reads from Tauri state** and makes API calls from Rust via `reqwest`
+3. **Never make authenticated API calls from JS in secondary windows** — use Tauri commands instead
+
+```rust
+// Shared state
+struct AuthToken(std::sync::Mutex<Option<String>>);
+
+// Main webview pushes the token
+#[tauri::command]
+fn set_auth_token(state: tauri::State<'_, AuthToken>, token: String) {
+    *state.0.lock().unwrap() = Some(token);
+}
+
+// Desktop feature reads the token and calls the API from Rust
+#[tauri::command]
+async fn quick_add_task(
+    state: tauri::State<'_, AuthToken>,
+    title: String,
+) -> Result<(), String> {
+    let token = state.0.lock().unwrap().clone()
+        .ok_or_else(|| "Not signed in.".to_string())?;
+
+    reqwest::Client::new()
+        .post("https://api.example.com/tasks")
+        .header("Authorization", format!("Bearer {}", token))
+        .json(&serde_json::json!({ "title": title }))
+        .send().await
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+```
+
+The token sync is injected into the main webview via `on_page_load`:
+
+```javascript
+async function syncAuthToken() {
+    var res = await fetch('/api/auth/session');
+    var session = await res.json();
+    if (session && session.accessToken) {
+        window.__TAURI__.core.invoke('set_auth_token', { token: session.accessToken });
+    }
+}
+setTimeout(syncAuthToken, 2000);
+setInterval(syncAuthToken, 300000);
+```
+
+### Desktop Patches via JS Injection
+
+Connected apps can inject JS into the main webview on every page load to patch behaviour that doesn't work in a WebView:
+
+```rust
+.plugin(
+    tauri::plugin::Builder::<tauri::Wry, ()>::new("desktop-patches")
+        .on_page_load(|window, _payload| {
+            if window.label() == "main" {
+                let _ = window.eval(DESKTOP_PATCHES_JS);
+            } else if window.label() == "quick-add" {
+                // Replace content for secondary windows
+                let js = format!(
+                    "document.open(); document.write({}); document.close();",
+                    serde_json::to_string(QUICK_ADD_HTML).unwrap_or_default()
+                );
+                let _ = window.eval(&js);
+            }
+        })
+        .build(),
+)
+```
+
+Use this for:
+- Hiding UI elements that don't work in WebViews (e.g. Google sign-in)
+- Syncing auth tokens to Tauri state
+- Injecting content into secondary windows
+- Adding desktop-specific UI enhancements
+
+### Connected Mode Checklist
+
+- [ ] `devUrl` and `frontendDist` point to the production URL (not localhost)
+- [ ] `titleBarStyle` set programmatically in `setup` hook (not in JSON config)
+- [ ] `withGlobalTauri: true` set if secondary windows need `__TAURI__`
+- [ ] OAuth buttons hidden via desktop patches JS
+- [ ] Icons generated: `npx tauri icon /path/to/square-icon.png`
+- [ ] Auth token synced from main webview to Tauri state for desktop features
+- [ ] API calls from secondary windows go through Tauri commands (Rust), not JS fetch
+- [ ] Secondary windows load a real domain URL, not `data:` URLs
+- [ ] Capabilities include all windows that need IPC access
+
+---
+
 ## Frontend Patterns (Standalone Mode)
 
 ### Theme System
