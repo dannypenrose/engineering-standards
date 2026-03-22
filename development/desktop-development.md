@@ -39,7 +39,7 @@ The application wraps an existing web frontend in a native window, adding deskto
 | Aspect | Detail |
 |--------|--------|
 | Frontend | External web app (Next.js, React, etc.) |
-| Config | `devUrl: "http://localhost:3000"`, `frontendDist: "path/to/.next"` |
+| Config | `devUrl: "http://forge-hub-dev.axiomstudio.io"`, `frontendDist: "path/to/.next"` |
 | Dev workflow | Start web app first, then `tauri dev` |
 | Build output | Binary embedding the built frontend |
 | Dependencies | Web app must be running for development |
@@ -124,7 +124,7 @@ src-tauri/src/
 ```json
 {
   "build": {
-    "devUrl": "http://localhost:3000",
+    "devUrl": "http://forge-hub-dev.axiomstudio.io",
     "frontendDist": "../../apps/my-app/frontend/.next"
   },
   "app": {

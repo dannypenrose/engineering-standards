@@ -73,7 +73,7 @@ USER appuser
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-  CMD wget -qO- http://localhost:3000/health || exit 1
+  CMD wget -qO- http://forge-hub-dev.axiomstudio.io/health || exit 1
 
 ENTRYPOINT ["node", "dist/main.js"]
 ```
@@ -255,7 +255,7 @@ services:
 ```dockerfile
 # HTTP health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-  CMD wget -qO- http://localhost:3000/health || exit 1
+  CMD wget -qO- http://forge-hub-dev.axiomstudio.io/health || exit 1
 
 # TCP health check (for databases, caches)
 HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 \
@@ -268,7 +268,7 @@ HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 \
 services:
   api:
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-qO-", "http://forge-hub-dev.axiomstudio.io/health"]
       interval: 30s
       timeout: 3s
       start_period: 10s
@@ -432,7 +432,7 @@ services:
     ports:
       - "3000:3000"
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-qO-", "http://forge-hub-dev.axiomstudio.io/health"]
       interval: 30s
       timeout: 3s
       start_period: 10s

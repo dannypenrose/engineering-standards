@@ -26,6 +26,8 @@ Establish consistent, reproducible local development environments that enable de
 | Docker | Containerization | Docker Desktop |
 | Git | Version control | `brew install git` |
 | Database client | Local databases | MySQL Workbench, pgAdmin |
+| PM2 | Process management | `npm install -g pm2` |
+| DevDash | Remote dev environment dashboard | See [DevDash repo](https://github.com/dannypenrose/devdash) |
 
 ### Project Setup Flow
 
@@ -102,6 +104,7 @@ Assign ports by technology stack to avoid conflicts and provide predictable assi
 | **5000-5999** | .NET / ASP.NET Core | C# backend services and APIs |
 | **7000-7999** | Go / Rust | High-performance compiled services |
 | **8000-8999** | Alternate Web/Frontend | Secondary web servers, admin panels |
+| **3099** | DevDash | Dev environment dashboard (PM2 web UI) |
 
 > **Full port assignments**: Document port allocations in each project's CLAUDE.md or README.
 
@@ -114,9 +117,9 @@ Every project must document its port assignments:
 
 | Service | Port | URL |
 |---------|------|-----|
-| Frontend | 3000 | http://localhost:3000 |
-| Backend API | 3002 | http://localhost:3002/api/v1 |
-| API Docs | 3002 | http://localhost:3002/api/docs |
+| Frontend | 3000 | http://forge-hub-dev.axiomstudio.io |
+| Backend API | 3002 | http://forge-hub-api-dev.axiomstudio.io/api/v1 |
+| API Docs | 3002 | http://forge-hub-api-dev.axiomstudio.io/api/docs |
 | Prisma Studio | 5555 | http://localhost:5555 |
 ```
 
@@ -221,6 +224,66 @@ module.exports = {
 }
 ```
 
+## Process Management with PM2 and DevDash
+
+### PM2 as the Local Process Manager
+
+PM2 is the standard process manager for all local development services. Rather than running dev servers in individual terminal tabs, PM2 keeps them running in the background, handles restarts on failure, and provides centralized log management.
+
+#### Installation
+
+```bash
+npm install -g pm2
+```
+
+#### Essential PM2 Commands
+
+| Command | Description |
+|---------|-------------|
+| `pm2 start <app>` | Start a process (script, config file, or ecosystem file) |
+| `pm2 stop <name\|id>` | Stop a running process |
+| `pm2 restart <name\|id>` | Restart a process |
+| `pm2 list` | List all managed processes with status |
+| `pm2 logs` | Stream logs from all processes (or specify a name/id) |
+| `pm2 delete <name\|id>` | Remove a process from PM2 entirely |
+
+#### Startup Persistence
+
+To ensure PM2 processes survive system reboots:
+
+```bash
+# Generate the startup script for your OS
+pm2 startup
+
+# After starting your desired processes, save the list
+pm2 save
+```
+
+### DevDash — Web UI for PM2 Management
+
+[DevDash](https://github.com/dannypenrose/devdash) is a lightweight web dashboard for managing PM2 processes and macOS services. It runs on **port 3099** and is designed for remote access through a Cloudflare Tunnel, making it possible to manage development services from any device.
+
+#### How DevDash Works
+
+- **Shell scripts** in `~/.devdash/scripts/` define the actions DevDash can perform (start, stop, restart services).
+- **Configuration** lives in `~/.devdash/config.json`, which maps services to their scripts and display settings.
+- DevDash calls PM2 commands under the hood, providing a visual interface over the standard PM2 CLI.
+
+#### Running DevDash with PM2
+
+DevDash itself should be managed by PM2 so it stays running and starts automatically on boot:
+
+```bash
+# Start DevDash with PM2
+pm2 start /path/to/devdash/server.js --name devdash
+
+# Save the process list and configure startup
+pm2 save
+pm2 startup
+```
+
+> **Note**: DevDash has no built-in authentication. When exposing it externally, always place it behind Cloudflare Access or another authentication layer. See the Cloudflare Tunnel documentation for setup details.
+
 ## Debugging
 
 ### VS Code Configuration
@@ -242,7 +305,7 @@ module.exports = {
       "name": "Debug Frontend",
       "type": "chrome",
       "request": "launch",
-      "url": "http://localhost:3000",
+      "url": "http://forge-hub-dev.axiomstudio.io",
       "webRoot": "${workspaceFolder}/apps/frontend"
     }
   ]
@@ -292,6 +355,8 @@ node --expose-gc --trace-gc app.js
 # Find and kill process
 lsof -ti :3000 | xargs kill -9
 ```
+
+Alternatively, if DevDash is running, use its **Kill Port** feature from the web UI to identify and terminate the process occupying a port without needing to use the terminal.
 
 ### Issue: Database Connection Failed
 

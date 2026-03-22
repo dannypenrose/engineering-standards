@@ -70,7 +70,7 @@ API URLs must be configurable per build profile. Never hardcode production URLs 
 export default ({ config }) => ({
   ...config,
   extra: {
-    apiUrl: process.env.API_URL || 'http://localhost:3000',
+    apiUrl: process.env.API_URL || 'http://forge-hub-dev.axiomstudio.io',
   },
 });
 ```
@@ -82,7 +82,7 @@ export default ({ config }) => ({
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "env": { "API_URL": "http://localhost:3000" }
+      "env": { "API_URL": "http://forge-hub-dev.axiomstudio.io" }
     },
     "preview": {
       "distribution": "internal",
