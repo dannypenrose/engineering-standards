@@ -354,7 +354,7 @@ groups:
 module.exports = {
   ci: {
     collect: {
-      url: ['http://forge-hub-dev.axiomstudio.io/', 'http://forge-hub-dev.axiomstudio.io/dashboard'],
+      url: ['http://localhost:3000/', 'http://localhost:3000/dashboard'],
       numberOfRuns: 3,
     },
     assert: {

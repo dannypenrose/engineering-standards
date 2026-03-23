@@ -180,7 +180,7 @@ ExecHealthCheck=/usr/local/bin/health-check.sh
 
 # Script: /usr/local/bin/health-check.sh
 #!/bin/bash
-curl -sf http://forge-hub-dev.axiomstudio.io/health > /dev/null || exit 1
+curl -sf http://localhost:3000/health > /dev/null || exit 1
 ```
 
 ## Container Orchestration (Docker)
@@ -202,7 +202,7 @@ services:
     volumes:
       - /var/log/myapp:/app/logs
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://forge-hub-dev.axiomstudio.io/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -445,7 +445,7 @@ systemctl start myapp
 
 # Verify service is healthy
 sleep 5
-curl -f http://forge-hub-dev.axiomstudio.io/health || {
+curl -f http://localhost:3000/health || {
   echo "ERROR: Service did not recover"
   exit 1
 }
@@ -504,7 +504,7 @@ docker-compose up -d --no-deps --scale api=2 api
 
 # Wait for health check
 sleep 10
-docker-compose exec api curl http://forge-hub-dev.axiomstudio.io/health
+docker-compose exec api curl http://localhost:3000/health
 
 # Remove old container
 docker-compose up -d --no-deps --scale api=1 api
@@ -535,7 +535,7 @@ This ensures:
 # Monitoring script to alert on service issues
 
 SERVICE="myapp"
-ENDPOINT="http://forge-hub-dev.axiomstudio.io/health"
+ENDPOINT="http://localhost:3000/health"
 ALERT_EMAIL="ops@example.com"
 
 # Check if service is running

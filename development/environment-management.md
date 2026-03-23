@@ -124,13 +124,13 @@ NEXT_PUBLIC_SITE_URL=https://example.com
 NEXT_PUBLIC_ANALYTICS_KEY=ak_1234567890
 
 # Frontend .env.local (local dev overrides - NEVER COMMIT)
-NEXT_PUBLIC_API_URL=http://forge-hub-api-dev.axiomstudio.io/api/v1
-NEXT_PUBLIC_SITE_URL=http://forge-hub-dev.axiomstudio.io
+NEXT_PUBLIC_API_URL=http://localhost:3002/api/v1
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
 # Frontend .env (production secrets - NEVER COMMIT)
 # Server-side secrets only (NextAuth, backend URL, etc.)
 NEXTAUTH_SECRET=production-secret
-BACKEND_URL=http://forge-hub-api-dev.axiomstudio.io
+BACKEND_URL=http://localhost:3002
 ```
 
 #### Gitignore Rules
@@ -463,7 +463,7 @@ systemctl restart {app_name}
 
 # Verify service restarted
 sleep 5
-if ! curl -f http://forge-hub-dev.axiomstudio.io/health > /dev/null; then
+if ! curl -f http://localhost:3000/health > /dev/null; then
   # Restore from backup
   cp $BACKUP_DIR/env_${DATE}.backup $ENV_FILE
   systemctl restart {app_name}
