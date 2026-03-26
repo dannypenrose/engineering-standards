@@ -445,6 +445,38 @@ Read("src/lib/auth.ts")
 2. **Sequential**: Complex multi-step analysis and reasoning
 3. **Playwright**: Browser automation and E2E testing
 
+### Configuration
+
+MCP servers are configured at two levels:
+
+| Scope | Location | Managed Via | Use Case |
+|-------|----------|-------------|----------|
+| **User (global)** | `~/.claude.json` | `claude mcp add --scope user` | Servers needed across all projects (Context7, Sequential Thinking, Playwright) |
+| **Project** | `.mcp.json` in project root | Manual file or `claude mcp add --scope project` | Project-specific servers (e.g. MSSQL for database projects) |
+
+#### Adding Global Servers (New Machine)
+
+```bash
+claude mcp add --scope user context7 -- npx -y @upstash/context7-mcp@latest
+claude mcp add --scope user sequential-thinking -- npx -y @modelcontextprotocol/server-sequential-thinking
+claude mcp add --scope user playwright -- npx -y @playwright/mcp@latest
+```
+
+#### Adding Project Servers
+
+Create `.mcp.json` in the project root:
+
+```json
+{
+  "mcpServers": {
+    "mssql": {
+      "command": "node",
+      "args": ["/path/to/mssql-mcp-server/server.mjs"]
+    }
+  }
+}
+```
+
 ### Fallback Strategy
 
 ```

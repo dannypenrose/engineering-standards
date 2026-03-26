@@ -15,6 +15,17 @@ Establish consistent, reproducible local development environments that enable de
 5. **Fast feedback loops** - Changes reflected immediately
 6. **Offline-capable** - Core development works without internet
 
+## Documentation Guidance
+
+Project documentation (README, getting-started guides, developer docs) must describe local development using **standard, generic commands** — the framework's own CLI tools (e.g. `yarn dev`, `dotnet watch run`, `pnpm dev`). Do not reference personal process management tools (PM2, DevDash, tmux scripts, etc.) in shared project docs.
+
+Personal tooling preferences belong in:
+- **CLAUDE.md** — instructions for AI coding assistants (personal context)
+- **Personal workflow docs** — your own knowledge base or runbooks
+- **Gitignored config files** — `.env.local`, local scripts, IDE settings
+
+This ensures any developer cloning the repo can get started without needing your specific toolchain.
+
 ## Development Environment Setup
 
 ### Prerequisites
