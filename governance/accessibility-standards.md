@@ -308,6 +308,58 @@ function FormField({ label, error, ...props }) {
 </div>
 ```
 
+## Destructive Actions
+
+Destructive actions (delete, remove, archive, cancel-with-loss, reset, disconnect, revoke) **must** require explicit user confirmation before executing. This protects users against accidental data loss from mis-clicks, mis-taps, keyboard mishits, and assistive-technology activation patterns.
+
+### Requirements
+
+- **Every destructive action requires a confirmation step.** No destructive action — in any app, on any platform — may execute directly from a single click, tap, key press, or swipe.
+- **Confirmation must be explicit.** A modal, dialog, or equivalent interrupt that forces the user to acknowledge the action. Toast "undo" patterns are **not** a substitute for confirmation on destructive operations that cannot be trivially reversed (e.g. cascading deletes, external side effects, permission revocations).
+- **Uniformity across the app.** Use a single confirmation component (e.g. `ConfirmDialog`) so the UX is identical everywhere. Do not re-implement ad-hoc confirmation flows per feature.
+- **Clarity over brevity.** The confirmation message must name the entity being affected, describe the consequence, and state whether the action is reversible. Avoid generic "Are you sure?" prompts.
+- **Destructive button styling.** The confirm button must be visually distinct (typically `color="error"` / red) and labelled with the action verb ("Delete", "Remove", "Revoke") — not "OK" or "Yes".
+- **Cancel is the default.** The cancel affordance must be equally prominent and should receive initial focus so that pressing `Enter` does not execute the destructive action.
+- **Keyboard accessible.** The confirmation dialog must trap focus, close on `Escape`, and be fully operable without a mouse.
+- **Screen-reader announced.** Use `role="dialog"` / `aria-modal="true"` and an `aria-labelledby` pointing at the title so assistive tech announces the confirmation context.
+
+### Example
+
+```tsx
+<ConfirmDialog
+  open={!!pendingDelete}
+  onClose={() => setPendingDelete(null)}
+  title="Delete note"
+  content={<>Are you sure you want to delete this note? This action cannot be undone.</>}
+  action={
+    <Button variant="contained" color="error" onClick={handleConfirmedDelete}>
+      Delete
+    </Button>
+  }
+/>
+```
+
+### What counts as destructive
+
+Any action that removes, hides, or invalidates user-visible data or state, including but not limited to:
+
+- Deleting records (notes, tasks, contacts, files, messages)
+- Bulk operations on multiple records
+- Cancelling an operation that discards in-progress work
+- Revoking access, permissions, API keys, or sessions
+- Archiving or soft-deleting when the action removes the item from the default view
+- Disconnecting integrations or unlinking accounts
+- Rolling back, resetting, or reverting to a previous state
+
+### Exemptions
+
+The only cases where immediate execution without confirmation is acceptable:
+
+- **Fully reversible, no side effects, single click to undo.** E.g. toggling a filter, hiding a column. These are not "destructive" in the user-data sense.
+- **User is actively editing** an input and clears a field they just typed — the input itself is the work in progress.
+
+Even then, if the action crosses a network boundary or affects persisted state, prefer a confirmation.
+
 ## Color and Contrast
 
 ### Contrast Requirements
@@ -464,6 +516,14 @@ describe('Accessibility', () => {
 - [ ] Can close with Escape key
 - [ ] Focus returns to trigger on close
 - [ ] Has `role="dialog"` and `aria-modal="true"`
+
+### Destructive Actions
+
+- [ ] Every destructive action shows a confirmation dialog before executing
+- [ ] Confirmation names the entity and states whether the action is reversible
+- [ ] Confirm button uses destructive styling and an action verb (not "OK")
+- [ ] Cancel affordance is equally prominent and receives initial focus
+- [ ] A single shared confirmation component is used across the app
 
 ## Checklist
 
