@@ -10,8 +10,8 @@ These standards provide concrete implementations of universal engineering princi
 
 | Standard | Description |
 | -------- | ----------- |
-| [Coding Standards](./coding-standards) | C# coding conventions, project structure, patterns |
-| [API Design](./api-design) | ASP.NET Core API design, controllers, validation |
+| [Coding Standards](/standards/dotnet/coding-standards) | C# coding conventions, project structure, patterns |
+| [API Design](/standards/dotnet/api-design) | ASP.NET Core API design, controllers, validation |
 
 ## Tech Stack Coverage
 
@@ -47,12 +47,12 @@ These standards provide concrete implementations of universal engineering princi
 
 These .NET implementations build upon:
 
-- [Security Guidelines](../governance/security-guidelines) - Authentication, authorization, input validation
-- [Database Standards](../governance/database-standards) - Schema design, migrations, indexing, naming conventions
-- [Testing Strategy](../quality/testing-strategy) - Unit, integration, E2E testing patterns
-- [Observability Standards](../reliability/observability-standards) - Logging, metrics, tracing
-- [Performance Budgets](../quality/performance-budgets) - API latency, response times
-- [CI/CD Pipelines](../development/ci-cd-pipelines) - .NET deploy workflow template, NuGet caching
+- [Security Guidelines](/standards/governance/security-guidelines) - Authentication, authorization, input validation
+- [Database Standards](/standards/governance/database-standards) - Schema design, migrations, indexing, naming conventions
+- [Testing Strategy](/standards/quality/testing-strategy) - Unit, integration, E2E testing patterns
+- [Observability Standards](/standards/reliability/observability-standards) - Logging, metrics, tracing
+- [Performance Budgets](/standards/quality/performance-budgets) - API latency, response times
+- [CI/CD Pipelines](/standards/development/ci-cd-pipelines) - .NET deploy workflow template, NuGet caching
 
 ## Quick Reference
 

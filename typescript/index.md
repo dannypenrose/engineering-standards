@@ -12,15 +12,15 @@ These standards provide concrete implementations of universal engineering princi
 
 | Standard | Target Architecture |
 | -------- | ------------------- |
-| [Monorepo Standards](./coding-standards-monorepo) | Turborepo + Next.js + NestJS monorepo |
-| [Next.js + NestJS Standards](./coding-standards-nextjs-nestjs) | Standalone full-stack applications |
+| [Monorepo Standards](/standards/typescript/coding-standards-monorepo) | Turborepo + Next.js + NestJS monorepo |
+| [Next.js + NestJS Standards](/standards/typescript/coding-standards-nextjs-nestjs) | Standalone full-stack applications |
 
 ### API Design
 
 | Standard | Target Architecture |
 | -------- | ------------------- |
-| [Monorepo API Design](./api-design-monorepo) | Shared API conventions for monorepo |
-| [Next.js + NestJS API Design](./api-design-nextjs-nestjs) | Standalone application API design |
+| [Monorepo API Design](/standards/typescript/api-design-monorepo) | Shared API conventions for monorepo |
+| [Next.js + NestJS API Design](/standards/typescript/api-design-nextjs-nestjs) | Standalone application API design |
 
 ## Tech Stack Coverage
 
@@ -54,12 +54,12 @@ These standards provide concrete implementations of universal engineering princi
 
 These TypeScript implementations build upon:
 
-- [Security Guidelines](../governance/security-guidelines) - Authentication, authorization, input validation
-- [Database Standards](../governance/database-standards) - Schema design, migrations, indexing, naming conventions
-- [Testing Strategy](../quality/testing-strategy) - Unit, integration, E2E testing patterns
-- [Observability Standards](../reliability/observability-standards) - Logging, metrics, tracing
-- [Performance Budgets](../quality/performance-budgets) - Core Web Vitals, bundle sizes
-- [CI/CD Pipelines](../development/ci-cd-pipelines) - Next.js deploy workflow template, npm/pnpm caching
+- [Security Guidelines](/standards/governance/security-guidelines) - Authentication, authorization, input validation
+- [Database Standards](/standards/governance/database-standards) - Schema design, migrations, indexing, naming conventions
+- [Testing Strategy](/standards/quality/testing-strategy) - Unit, integration, E2E testing patterns
+- [Observability Standards](/standards/reliability/observability-standards) - Logging, metrics, tracing
+- [Performance Budgets](/standards/quality/performance-budgets) - Core Web Vitals, bundle sizes
+- [CI/CD Pipelines](/standards/development/ci-cd-pipelines) - Next.js deploy workflow template, npm/pnpm caching
 
 ## Quick Reference
 

@@ -10,10 +10,10 @@ Establish consistent practices for leveraging AI coding agents effectively while
 
 | Standard | Description |
 | -------- | ----------- |
-| [Agentic Coding Standards](./agentic-coding-standards) | Platform-agnostic principles for working with any AI coding agent -- standards enforcement through skills, context architecture, workflow standards, failure modes, and security |
-| [Claude Code Standards](./claude-code-standards) | Claude-specific implementation guide -- CLAUDE.md templates, sub-agent orchestration, MCP integration, and Claude Code workflows |
-| [Prompt Engineering](./prompt-engineering) | Writing effective prompts, task decomposition, constraint techniques, and iterative refinement |
-| [AI Code Review](./ai-code-review) | Reviewing AI-generated code, AI-specific failure modes, security checks, and pattern conformance |
+| [Agentic Coding Standards](/standards/ai/agentic-coding-standards) | Platform-agnostic principles for working with any AI coding agent -- standards enforcement through skills, context architecture, workflow standards, failure modes, and security |
+| [Claude Code Standards](/standards/ai/claude-code-standards) | Claude-specific implementation guide -- CLAUDE.md templates, sub-agent orchestration, MCP integration, and Claude Code workflows |
+| [Prompt Engineering](/standards/ai/prompt-engineering) | Writing effective prompts, task decomposition, constraint techniques, and iterative refinement |
+| [AI Code Review](/standards/ai/ai-code-review) | Reviewing AI-generated code, AI-specific failure modes, security checks, and pattern conformance |
 
 ## Core Principles
 
@@ -32,7 +32,7 @@ The recommended approach for any project using AI coding agents:
 3. **Configure your agent** -- Install skills so they activate without manual invocation
 4. **Review all output** -- AI-generated code must pass the same review bar as human-written code
 
-See [Agentic Coding Standards](./agentic-coding-standards) for the full approach, and the [Agent Skills](https://github.com/dannypenrose/agent-skills) repository for a reference implementation.
+See [Agentic Coding Standards](/standards/ai/agentic-coding-standards) for the full approach, and the [Agent Skills](https://github.com/dannypenrose/agent-skills) repository for a reference implementation.
 
 ## When to Use AI Assistance
 
@@ -58,7 +58,7 @@ See [Agentic Coding Standards](./agentic-coding-standards) for the full approach
 
 AI-assisted development should follow all other engineering standards:
 
-- [Security Guidelines](../governance/security-guidelines) -- Apply to all AI-generated code
-- [Testing Strategy](../quality/testing-strategy) -- Test AI-generated code thoroughly
-- [Code Review Guidelines](../quality/code-review-guidelines) -- Review AI code like human code
-- [Documentation Standards](../governance/documentation-standards) -- Document AI-assisted decisions
+- [Security Guidelines](/standards/governance/security-guidelines) -- Apply to all AI-generated code
+- [Testing Strategy](/standards/quality/testing-strategy) -- Test AI-generated code thoroughly
+- [Code Review Guidelines](/standards/quality/code-review-guidelines) -- Review AI code like human code
+- [Documentation Standards](/standards/governance/documentation-standards) -- Document AI-assisted decisions

@@ -19,7 +19,7 @@ These standards ensure consistency and quality across all applications by establ
 
 ## Standards by Category
 
-### [Development](./development)
+### [Development](/standards/development)
 
 Tooling, source control, dependency management, and cross-cutting development patterns:
 
@@ -29,7 +29,7 @@ Tooling, source control, dependency management, and cross-cutting development pa
 - API versioning, caching, containerization, and real-time communication
 - Internationalization, state management, and data migration
 
-### [Quality](./quality)
+### [Quality](/standards/quality)
 
 Testing, review, CI pipelines, and performance:
 
@@ -38,7 +38,7 @@ Testing, review, CI pipelines, and performance:
 - CI preflight strategy
 - Performance budgets
 
-### [Reliability](./reliability)
+### [Reliability](/standards/reliability)
 
 Observability, SLOs, incident management, and resilience:
 
@@ -47,7 +47,7 @@ Observability, SLOs, incident management, and resilience:
 - Incident management
 - Load testing and chaos engineering
 
-### [Governance](./governance)
+### [Governance](/standards/governance)
 
 Security, compliance, and architecture decisions:
 
@@ -57,7 +57,7 @@ Security, compliance, and architecture decisions:
 - Documentation and accessibility standards
 - Database standards and ADR templates
 
-### [TypeScript Standards](./typescript)
+### [TypeScript Standards](/standards/typescript)
 
 Implementation standards for TypeScript/JavaScript projects:
 
@@ -66,7 +66,7 @@ Implementation standards for TypeScript/JavaScript projects:
 - API design patterns
 - React best practices
 
-### [.NET Standards](./dotnet)
+### [.NET Standards](/standards/dotnet)
 
 Implementation standards for .NET Core projects:
 
@@ -75,7 +75,7 @@ Implementation standards for .NET Core projects:
 - Entity Framework patterns
 - .NET specific tooling
 
-### [Python Standards](./python)
+### [Python Standards](/standards/python)
 
 Implementation standards for Python projects:
 
@@ -84,7 +84,7 @@ Implementation standards for Python projects:
 - Type hints and validation
 - Python-specific tooling
 
-### [AI-Assisted Development](./ai)
+### [AI-Assisted Development](/standards/ai)
 
 Standards for AI-assisted development:
 
