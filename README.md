@@ -118,6 +118,6 @@ The author accepts no liability for defects, security vulnerabilities, or other 
 
 This work is licensed under [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/).
 
-You may view and reference these standards for personal, non-commercial use. You may **not** modify, adapt, redistribute, or use them commercially without explicit written permission from the author. For commercial licensing enquiries, please [get in touch](https://github.com/dannypenrose).
+You may view and reference these standards. You may **not** modify, adapt, redistribute, or use them commercially without explicit written permission from the author.
 
 Copyright (c) 2025-2026 Danny Penrose
