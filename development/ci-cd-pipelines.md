@@ -259,6 +259,95 @@ Deploy workflows do **not** run type-check, lint, test, or smoke tests. These ar
 
 **Trade-off:** This relies on developers not bypassing the hook (`--no-verify`). For teams, add a separate `ci-quality` workflow on pull requests instead of the deploy path.
 
+## Branch Protection + PR Validation
+
+Pre-push hooks have escape hatches: `--no-verify`, `SKIP_BUILD=true`, and any other env vars the hook respects. CI on a protected branch is the only place those hatches don't reach. The pattern below is the canonical safety net for "no failed CI builds on main".
+
+### 1. PR-validation workflow
+
+A workflow scoped to `pull_request` (not `push`) that runs the same checks the pre-push hook does, but with no opt-outs.
+
+```yaml
+# .github/workflows/ci.yml
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for `turbo --filter '[origin/main...HEAD]'`
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+      - run: node tools/check-backend-deps.mjs
+      - run: node tools/check-frontend-deps.mjs
+      - run: pnpm build:packages
+      - run: pnpm turbo run type-check --filter='[origin/main...HEAD]' --output-logs=errors-only
+      - run: pnpm turbo run lint --filter='[origin/main...HEAD]' --output-logs=errors-only
+      - run: pnpm turbo run build --filter='[origin/main...HEAD]' --output-logs=errors-only
+```
+
+Scope the heavy steps (type-check, lint, build) to changed apps using Turbo's `[origin/main...HEAD]` filter — a one-app PR doesn't pay the full-monorepo cost.
+
+### 2. Branch protection rule
+
+Trigger the workflow at least once (push the workflow file, then `gh workflow run ci.yml` or open a no-op PR) so GitHub registers the check name. Then enable protection on `main`:
+
+```sh
+cat <<'JSON' | gh api -X PUT repos/{owner}/{repo}/branches/main/protection --input -
+{
+  "required_status_checks": {
+    "strict": true,
+    "contexts": ["Validate"]
+  },
+  "enforce_admins": false,
+  "required_pull_request_reviews": {
+    "required_approving_review_count": 0,
+    "dismiss_stale_reviews": false,
+    "require_code_owner_reviews": false
+  },
+  "restrictions": null,
+  "allow_force_pushes": false,
+  "allow_deletions": false
+}
+JSON
+```
+
+Settings rationale:
+
+- `contexts: ["Validate"]` — the job `name:` field, not the workflow name.
+- `strict: true` — branch must be up-to-date with `main` before merging; prevents the "two PRs both green individually but break together" failure.
+- `required_approving_review_count: 0` — solo dev or trusted small team. Raise to 1+ when you add collaborators.
+- `enforce_admins: false` — keeps an emergency-pushes escape hatch for the repo owner. Flip to `true` for teams.
+- `allow_force_pushes: false`, `allow_deletions: false` — prevents history rewrites on `main`.
+
+### 3. Order of operations matters
+
+Branch protection rejects the rule if no run of the named check exists yet — GitHub doesn't validate check names against workflow files. Sequence:
+
+1. Push the `ci.yml` workflow to `main` (still unprotected at this point).
+2. Trigger the workflow once via `workflow_dispatch` or an initial PR.
+3. Apply the protection rule.
+4. From this point on, all `main` changes go through PR + green CI.
+
 ## Stack-Specific Patterns
 
 ### Next.js (npm, standalone repo)

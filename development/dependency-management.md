@@ -429,8 +429,11 @@ node tools/check-frontend-deps.mjs --staged
 | Hook | Tool | Mode | Blocking |
 |------|------|------|----------|
 | Pre-commit | `check-frontend-deps.mjs --staged` | Staged files only | Yes |
-| Pre-push | `check-backend-deps.mjs` | Full scan | Yes |
+| Pre-commit | `check-backend-deps.mjs --staged` | Staged files only | Yes |
 | Pre-push | `check-frontend-deps.mjs` | Full scan | Yes |
+| Pre-push | `check-backend-deps.mjs` | Full scan | Yes |
+
+Both checkers support a `--staged` mode that scans only files in the current commit, returning in milliseconds. Run them at pre-commit so undeclared imports fail before they enter git history. Run them again at pre-push as a full-scan safety net for dependencies declared but later removed without removing their imports.
 
 ## Monorepo Considerations
 
@@ -464,6 +467,67 @@ pnpm why <package-name>
 # Deduplicate
 pnpm dedupe
 ```
+
+### Cross-App Peer-Dep Drift
+
+In a single-lockfile monorepo, **one app's dependency declaration can silently change peer-dep resolution for every other app** that shares the same package. Example failure mode:
+
+- App A declares `@mui/x-date-pickers@7` (peer: `date-fns: "^2.25.0 || ^3.2.0"`).
+- App B declares `date-fns: "^3.6.0"`.
+- pnpm resolves the shared peer to v3 across all apps.
+- `@mui/x-date-pickers/AdapterDateFns` (designed for v2 internals) breaks at build time in *every* app that uses it — including apps that never touched `date-fns`.
+
+Two complementary mitigations:
+
+#### 1. `pnpm.overrides` for compat-fragile pinning
+
+Force a specific version regardless of what any app — direct or transitive — declares.
+
+```json
+// Root package.json
+{
+  "pnpm": {
+    "overrides": {
+      "date-fns": "^2.30.0"
+    }
+  }
+}
+```
+
+Use overrides for packages with known compat constraints (e.g. an adapter wired to a specific major). They are not for general version control — the version pin is invisible to readers of individual app `package.json` files.
+
+#### 2. `pnpm` catalogs for shared deps
+
+Declare common dep versions once in `pnpm-workspace.yaml`, then reference them from each app via `"<dep>": "catalog:"`. Drift between apps becomes structurally impossible.
+
+```yaml
+# pnpm-workspace.yaml
+packages:
+  - "apps/*/frontend"
+  - "apps/*/backend"
+  - "packages/*"
+
+catalog:
+  "@hookform/resolvers": ^3.9.1
+  "@mui/x-date-pickers": ^7.23.0
+  date-fns: ^2.30.0
+  react-hook-form: ^7.54.0
+  zod: ^3.23.8
+```
+
+```json
+// apps/<app>/frontend/package.json
+{
+  "dependencies": {
+    "react-hook-form": "catalog:",
+    "zod": "catalog:"
+  }
+}
+```
+
+When to add a dep to the catalog: as soon as it appears in two or more apps with the same version. Move it back out only if one app has a legitimate reason to diverge.
+
+When to use overrides instead: when the dep doesn't appear directly in any app's `package.json` but its peer-dep resolution matters (i.e. you're pinning a transitive). Catalogs control direct declarations; overrides control resolution.
 
 ## .NET Dependency Management
 

@@ -69,11 +69,14 @@ STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR)
 # Catches imports of packages not declared in the nearest package.json.
 # pnpm hoisting makes undeclared packages work locally but they fail in CI.
 HAS_FRONTEND_FILES=false
+HAS_BACKEND_FILES=false
 for file in $STAGED_FILES; do
     case "$file" in
         apps/*/frontend/src/*.ts|apps/*/frontend/src/*.tsx|apps/*/frontend/src/**/*.ts|apps/*/frontend/src/**/*.tsx)
             HAS_FRONTEND_FILES=true
-            break
+            ;;
+        apps/*/backend/src/*.ts|apps/*/backend/src/**/*.ts)
+            HAS_BACKEND_FILES=true
             ;;
     esac
 done
@@ -83,6 +86,16 @@ if [ "$HAS_FRONTEND_FILES" = "true" ]; then
     if [ $? -ne 0 ]; then
         echo ""
         echo "❌ Undeclared frontend dependencies found. Commit aborted."
+        echo "   Either add the dependency or remove the dead import."
+        exit 1
+    fi
+fi
+
+if [ "$HAS_BACKEND_FILES" = "true" ]; then
+    node tools/check-backend-deps.mjs --staged
+    if [ $? -ne 0 ]; then
+        echo ""
+        echo "❌ Undeclared backend dependencies found. Commit aborted."
         echo "   Either add the dependency or remove the dead import."
         exit 1
     fi
