@@ -59,146 +59,95 @@ const PERMISSION_FLAGS = {
 
 ## Flag Storage and Configuration
 
-### Authoritative Source: Self-Hosted Unleash OSS
+### Single Authoritative Source
 
-All feature flag values are stored in **self-hosted Unleash OSS**. The Unleash dashboard is the only place flag state is changed.
+Flag state must live in **one** authoritative store — a dedicated feature flag service, whether managed (e.g. LaunchDarkly, Flagsmith) or self-hosted (e.g. Unleash, an in-house service). Pick one per environment and treat it as the only place flag state changes. Adding, toggling, scheduling, or killing a flag happens in that service's control plane — not in application code, not in `.env` files, and not in scattered admin panels.
 
-```
-Dashboard URL:  https://unleash.axiomstudio.io
-SDK Backend:    Backends read via the unleash-client Node SDK
-                (see @forge/feature-flags UnleashStorage adapter)
-```
+The service is reached through its SDK at startup:
 
-Adding, toggling, enabling, scheduling, or killing a flag is done in the Unleash UI — not in code, not in `.env` files, and not in an in-app admin panel. The previous in-app admin UI was removed when the Unleash backend landed.
+| Setting | Purpose |
+| --- | --- |
+| Service endpoint | The flag service API the backend connects to |
+| Client token | Credential issued by the flag service |
+| App identifier | Names the consuming application for metrics and targeting |
 
-### Required Backend Environment Variables
+Provide these via environment variables or your secrets manager. Frontends should **not** call the flag service directly — they fetch resolved flag values from their backend (for example, a `GET /feature-flags` endpoint), which keeps tokens server-side and gives one evaluation point.
 
-Each backend reads three Unleash variables at startup:
+### Service Configuration Is Not Feature Toggling
 
-| Variable | Purpose | Example |
-| --- | --- | --- |
-| `UNLEASH_URL` | Unleash API endpoint | `https://unleash.axiomstudio.io/api` |
-| `UNLEASH_TOKEN` | Client SDK token issued by Unleash | `*:production.<token>` |
-| `UNLEASH_APP_NAME` | App identifier reported to Unleash (used for metrics + targeting) | `forge-hub-backend` |
-
-Frontends do **not** read Unleash directly. They fetch resolved flag values from their backend's `/api/v1/feature-flags` endpoint.
-
-### `ENABLE_*` Env Vars Are Not Feature Flags
-
-`ENABLE_*` environment variables remain in use — but they are **NestJS module-loading configuration for shared platform modules only**, not feature flags. They decide which `@org/backend-core` modules get imported into `EnterpriseModule` at process start (a build-time concern), independently of the runtime flag value that Unleash returns.
-
-**Canonical platform `ENABLE_*` set** (these and only these, identical across every app):
-
-```env
-ENABLE_AI              # @org/backend-core AIModule (OpenRouter)
-ENABLE_ANALYTICS       # AnalyticsModule
-ENABLE_API_KEYS        # ApiKeysModule
-ENABLE_BLOG            # BlogModule
-ENABLE_EMAIL           # EmailModule (Resend)
-ENABLE_NOTIFICATIONS   # NotificationsModule
-ENABLE_PAYMENTS        # BillingModule (Stripe)
-ENABLE_S3_UPLOADS      # UploadsModule (S3 or local)
-ENABLE_TEAMS           # TeamModule
-ENABLE_WEBHOOKS        # WebhooksModule
-```
-
-**App-specific modules do not get `ENABLE_*` vars.** They always load and are gated at runtime via Unleash feature flags on their controllers (`@FeatureFlagController('perm_X_v1')` / `@FeatureFlag('perm_X_v1')`). Boot-time gating for app-specific domain modules is reserved for the rare case where the module has heavy startup cost or an external dependency you genuinely want to remove from the running process — address those on a case-by-case basis, not as a default pattern.
+Keep two concerns separate, because conflating them is a common and costly mistake:
 
 | Concern | Mechanism | When evaluated |
 | --- | --- | --- |
-| Feature gating (runtime toggle, rollout %, targeting) | Unleash | Every request |
-| Shared platform module loading at boot | `ENABLE_*` env var | Process start |
-| App-specific module loading at boot | (always load — gate at runtime via Unleash) | n/a |
+| Feature gating (runtime toggle, rollout %, targeting) | Flag service | Every request |
+| Service/module wiring (which integrations load) | Environment configuration | Process start |
 
-This separation is the industry-standard split between *service configuration* (env vars) and *feature toggling* (a flag service). Do not conflate them: `ENABLE_BLOG=false` removes `BlogModule` from the running process entirely; `perm_content_blog_v1=false` in Unleash leaves the module loaded but rejects requests at the guard.
+*Service configuration* decides what code or integrations are present in the running process (a deployment-time concern). *Feature toggling* decides whether a present feature is exposed to a given request (a runtime concern). Disabling a module via configuration removes it from the process entirely; disabling a flag leaves the code loaded but rejects the request at the guard.
 
-### Deprecated Env-Var Conventions
-
-The previous env-storage-backed conventions are removed:
-
-- `FEATURE_*` (e.g. `FEATURE_PERM_CONTENT_BLOG_V1=true`) — **removed**, do not use
-- `NEXT_PUBLIC_FEATURE_FLAG_*` (e.g. `NEXT_PUBLIC_FEATURE_FLAG_PERM_CONTENT_BLOG_V1=true`) — **removed**, do not use
-
-If you find either in a `.env*` file, delete the line. Use Unleash for runtime toggling.
+As a default, ship modules unconditionally and gate them at runtime with flags. Reserve startup-time gating for modules with heavy startup cost or an external dependency you genuinely want absent from the process — decide those case by case, not as the norm.
 
 ### Local Development
 
-Two options for local backend work:
+Two options for local work:
 
-1. **Connect to shared Unleash** — set `UNLEASH_URL`, `UNLEASH_TOKEN`, `UNLEASH_APP_NAME` to the shared `https://unleash.axiomstudio.io` instance. Recommended for parity with deployed environments.
-2. **Skip Unleash, use the JSON bootstrap** — leave `UNLEASH_URL` unset and the backend falls through to `feature-flags.bootstrap.json` (see next section). Useful for offline work or when you're testing against fixed flag states.
+1. **Connect to a shared flag service instance** — point the SDK at a shared non-production instance. Best for parity with deployed environments.
+2. **Use a local bootstrap file** — skip the network and resolve flags from a checked-in defaults file (see below). Best for offline work or testing fixed flag states.
 
-### JSON Bootstrap Safety Net
+### Bootstrap Fallback File
 
-Every backend ships with a `feature-flags.bootstrap.json` file next to its compiled output. The `@forge/feature-flags` storage chain reads from it whenever Unleash is unreachable, has not yet completed its first sync, or is intentionally disabled. This is the migration safety net and an operational floor — not a long-term parallel control plane.
+Ship a bootstrap defaults file (e.g. `feature-flags.bootstrap.json`) alongside each backend. The flag-resolution chain reads it whenever the flag service is unreachable, has not completed its first sync, or is intentionally disabled. Treat this as a resilience floor and migration safety net — not a parallel control plane.
 
-**Storage resolution order** (highest precedence first):
+**Resolution order** (highest precedence first):
 
 | Layer | When it answers |
 | --- | --- |
-| Memory (in-process overlay) | A `FeatureFlagService.updateFlag()` call in this process (rare; mostly tests / kill-switches) |
-| Unleash | `UNLEASH_URL` is set **and** the SDK has synchronised |
-| JSON bootstrap | `FEATURE_FLAGS_BOOTSTRAP_FILE` is set and the file is readable |
-| Env (`ENABLE_*` only) | Nothing else is configured |
+| In-process override | Set programmatically in this process (rare — tests, emergency kill switches) |
+| Flag service | The service is configured **and** the SDK has synchronised |
+| Bootstrap file | The bootstrap file is configured and readable |
+| Static defaults | Nothing else is configured (everything off unless explicitly defaulted) |
 
-A flag answered by Unleash always wins over the same flag in JSON. JSON only fires when Unleash can't.
+A flag answered by the service always wins over the same flag in the bootstrap file. The file only fires when the service can't.
 
-**Required env var per backend**:
-
-```env
-FEATURE_FLAGS_BOOTSTRAP_FILE=./feature-flags.bootstrap.json
-```
-
-**File format** (`apps/<app>/backend/feature-flags.bootstrap.json`):
+**Example bootstrap file:**
 
 ```json
 {
   "version": 1,
-  "description": "Bootstrap feature-flag state for <app>. Delete once Unleash is the stable single source of truth.",
+  "description": "Bootstrap feature-flag defaults. Used only when the flag service is unreachable.",
   "flags": {
     "perm_content_blog_v1": { "type": "permission", "enabled": true },
-    "perm_billing_stripe_v1": { "type": "permission", "enabled": false },
+    "perm_billing_payments_v1": { "type": "permission", "enabled": false },
     "release_auth_remember_me_v1": { "type": "release", "enabled": true }
   }
 }
 ```
 
-#### Updating a flag via the JSON bootstrap (when Unleash is not yet wired up)
+#### Changing flag state via the bootstrap file
 
-You have two ways to change flag state via the JSON layer:
+When the flag service is not yet wired up, two paths exist:
 
-1. **Edit in repo, redeploy via CI** — the predictable, auditable path. Change `apps/<app>/backend/feature-flags.bootstrap.json`, commit, push, let CI rebuild and redeploy. Flag state takes effect when the new build is live.
-2. **Edit the JSON directly on the production server** — fast, no CI. Edit `feature-flags.bootstrap.json` in the deployed backend's working directory, then restart the backend (`systemctl restart <app>-backend` or equivalent) so the in-process flag cache clears. **The restart is required** — `FeatureFlagService` caches evaluation results in-process with a 5-minute TTL, so an edit without a restart may not propagate for up to 5 minutes.
+1. **Edit in the repo, redeploy via CI** — the predictable, auditable path. Change the bootstrap file, commit, push, let CI rebuild and deploy. Preferred for all routine changes.
+2. **Edit on the running server** — fast, no CI, for incident triage only. Edit the deployed bootstrap file, then restart the process so any in-process flag cache clears. A restart (or cache TTL expiry) is required for the change to take effect.
 
-Pick option 1 unless you're triaging a production incident. The server-side edit drifts from git and is easy to forget — always backport to the repo as a follow-up.
+Always backport a server-side edit to the repo — out-of-band edits drift from version control and are easily lost.
 
-Once Unleash is the source of truth (Phase 4 of the rollout), neither method matters: the Unleash dashboard becomes the single place flags change, and the bootstrap JSON only fires during the SDK's cold-start window or as a fallback when Unleash is genuinely unreachable.
+#### Retiring the bootstrap fallback
 
-#### When to delete the JSON layer
-
-After Unleash has been the stable source of truth for ~1–2 weeks **and** you have not needed the JSON fallback, retire it:
-
-1. Delete `apps/<app>/backend/feature-flags.bootstrap.json` from the repo.
-2. Remove `FEATURE_FLAGS_BOOTSTRAP_FILE=...` from each backend's `.env*` files.
-3. Optional: simplify `buildDefaultStorage()` in `@forge/feature-flags`'s `service.ts` to drop the JsonStorage branch.
-
-### Rollback Escape Hatch
-
-If Unleash is unreachable, misconfigured, or being decommissioned, leave `UNLEASH_URL` empty (or unset). The `@forge/feature-flags` package falls back to the JSON bootstrap first, then to the legacy `EnvStorage` adapter (which reads `ENABLE_*` only and treats every other flag as off). The JSON path is the primary fallback while the migration is in flight; `EnvStorage` is the floor of last resort.
+Once the flag service has been the stable source of truth for a sustained period (e.g. 1–2 weeks) and the fallback has not been needed, retire it: remove the bootstrap file and its configuration, and drop the fallback branch from the resolution chain. Keep it only if you want the operational floor for service outages.
 
 ## App-Specific Domain Flags (Monorepo)
 
-In a monorepo with multiple applications, the same Unleash instance serves every app. Flags are partitioned by name, not by environment or project.
+In a monorepo with multiple applications, one flag service instance serves every app. Flags are partitioned by name, not by environment or project.
 
 ### Shared Infrastructure Flags
 
 Flags for shared modules that every app can consume (auth, billing, email, etc.):
 
 ```typescript
-// Shared module flags (defined in @org/feature-flags)
-'perm_auth_core_v1'          // Authentication
-'perm_billing_stripe_v1'     // Stripe billing
-'perm_content_blog_v1'       // Blog CMS
+// Shared module flags (defined in a shared flags package)
+'perm_auth_core_v1'           // Authentication
+'perm_billing_payments_v1'    // Billing
+'perm_content_blog_v1'        // Blog CMS
 'perm_comms_notifications_v1' // Notifications
 ```
 
@@ -237,11 +186,11 @@ Flags for features unique to a single application. These use domain names that r
 
 ### Guidelines
 
-1. **Document app-specific flags** in each app's `docs/feature-flags-brief.md`.
-2. **Keep names unique** across the monorepo — Unleash is a single namespace.
+1. **Document app-specific flags** in each app's flag brief (e.g. `docs/feature-flags-brief.md`).
+2. **Keep names unique** across the monorepo — the flag service is a single namespace.
 3. **Use per-app briefs** as the source of truth for flag inventories.
-4. **One Unleash flag per feature** — do not multiplex on a single flag.
-5. **Naming convention is unchanged**: `{type}_{domain}_{feature}_{version}` (`perm_content_blog_v1`, `release_checkout_v2`, `exp_pricing_annual_v1`, `kill_search_v1`).
+4. **One flag per feature** — do not multiplex multiple behaviours onto a single flag.
+5. **Follow the naming convention**: `{type}_{domain}_{feature}_{version}` (`perm_content_blog_v1`, `release_checkout_v2`, `exp_pricing_annual_v1`, `kill_search_v1`).
 
 ## Frontend Gating Patterns (Required)
 
@@ -300,9 +249,9 @@ const filteredItems = menuItems.filter((item) => !item.featureFlag || sidebarFla
 
 ### Toggling Flags
 
-Flags are toggled in the Unleash dashboard at `https://unleash.axiomstudio.io`. The previous in-app `/admin/feature-flags` page has been removed — there is no per-app toggle UI. Group flags in Unleash by tag or project so platform flags and app-specific flags stay legible.
+Flags are toggled in the flag service's control plane, not in per-app admin UIs. Group flags by tag or project there so platform flags and app-specific flags stay legible.
 
-Infrastructure-only flags (database, CORS, caching, etc.) should not be created in Unleash at all. Service configuration of that kind belongs in env vars, not in a runtime flag service.
+Infrastructure-only switches (database, CORS, caching, etc.) should not be created as feature flags at all. Service configuration of that kind belongs in environment configuration, not in a runtime flag service.
 
 ## Implementation Patterns
 
