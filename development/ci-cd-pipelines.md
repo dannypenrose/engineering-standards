@@ -52,7 +52,7 @@ on:
 
 concurrency:
   group: deploy-{APP_NAME}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 env:
   # Runtime versions as workflow-level env vars
@@ -95,11 +95,38 @@ Every deploy workflow must include a concurrency group:
 ```yaml
 concurrency:
   group: deploy-{APP_NAME}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 ```
 
 - **Group format:** `deploy-{APP_NAME}-${{ github.ref }}`
-- **`cancel-in-progress: true`** — If a new push arrives while deploying, cancel the in-progress deploy and start the new one.
+- **`cancel-in-progress: false`** — deploys **queue**; they never cancel each other.
+
+### Why deploys queue and builds do not
+
+`cancel-in-progress: true` is right for a build you can re-run, and wrong for a
+deploy. Two things go wrong when a deploy is cancelled.
+
+**Releases are silently discarded.** On 2026-07-31 two merges to `main` four
+minutes apart shared one concurrency group, because `github.ref` is
+`refs/heads/main` for both. The second cancelled the first, and the second was a
+docs-only change whose `paths` filter then correctly skipped Build & Deploy. A
+196-file release reported "success" twice and was never deployed at all, which is
+the worst failure mode available: nothing looks wrong.
+
+**A half-finished rsync leaves a mixed bundle.** Cancelling mid-transfer strands
+the server on a mix of old and new files.
+
+Keep `cancel-in-progress: true` for CI and PR-validation workflows, where the
+only cost of cancelling is a re-run:
+
+```yaml
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+```
+
+The trade-off to accept: on a busy repo, queued deploys back up behind each
+other. That is strictly better than dropping one.
 
 ## Caching Strategies
 
@@ -363,7 +390,7 @@ on:
 
 concurrency:
   group: deploy-{APP_NAME}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 env:
   NODE_VERSION: '20'
@@ -482,7 +509,7 @@ on:
 
 concurrency:
   group: deploy-{APP_NAME}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build-and-deploy:
@@ -607,7 +634,7 @@ When creating a new deploy workflow, verify:
 
 - [ ] `paths:` trigger scoped to relevant directories
 - [ ] `workflow_dispatch:` present for manual deploys
-- [ ] `concurrency:` group with `cancel-in-progress: true`
+- [ ] `concurrency:` group with `cancel-in-progress: false` (deploys queue; see Concurrency Control)
 - [ ] `environment:` set if secrets are scoped to a GitHub environment
 - [ ] Runtime version as workflow-level `env:` variable
 - [ ] Dependency cache configured (`setup-node` cache, `actions/cache` for NuGet)
