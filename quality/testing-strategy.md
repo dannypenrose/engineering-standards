@@ -319,6 +319,33 @@ module.exports = {
 };
 ```
 
+### Test module resolution must mirror the build's
+
+A test runner resolves path aliases through its own config, not through
+`tsconfig.json`, so the two drift silently. When they disagree, an import that
+the application builds and ships cannot be resolved under test; the suite that
+covered it stops running, and nothing reports a gap. The test that exercised the
+page is still green, because it is now exercising something else, or nothing.
+
+```javascript
+// tsconfig.json  →  "@/*": ["./*"]
+
+// jest.config.js
+moduleNameMapper: {
+  // Wrong: `@/lib/auth` resolves to a directory that does not exist, and
+  // `@/src/components/X` resolves to `src/src/components/X`.
+  '^@/(.*)$': '<rootDir>/src/$1',
+
+  // Right: the same root the compiler and the bundler use.
+  '^@/(.*)$': '<rootDir>/$1',
+}
+```
+
+Every alias the build defines gets a matching entry, in the same order of
+specificity: a subpath rule (`^@scope/([^/]+)/(.*)$`) must come before the
+catch-all that would otherwise swallow it. When an alias changes in one file,
+change it in the other in the same commit.
+
 ### Running the suite locally
 
 **Never run a whole monorepo's tests in one command on a developer machine.** The
