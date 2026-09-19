@@ -303,15 +303,47 @@ test:
 
 ### Parallel Execution
 
+`maxWorkers: '50%'` is safe for a single package. In a monorepo it is not, because
+the figure is **per package**: a task runner starting eight packages at once gets
+eight pools of half your cores each. Size the pool by where it runs.
+
 ```typescript
 // jest.config.js
 module.exports = {
-  maxWorkers: '50%',  // Use half of available CPUs
+  // On a developer machine the task runner is already serialising packages, so
+  // a modest pool per package is right. CI has the whole runner to itself.
+  maxWorkers: process.env.CI ? '50%' : 2,
   testTimeout: 10000,
   // Shard tests across CI workers
   shard: process.env.CI ? `${process.env.SHARD_INDEX}/${process.env.SHARD_TOTAL}` : undefined,
 };
 ```
+
+### Running the suite locally
+
+**Never run a whole monorepo's tests in one command on a developer machine.** The
+worker pools multiply, memory runs out, and the machine can freeze. Worse, a
+starved run reports killed workers as failing tests, so the numbers are false.
+
+```bash
+# Correct
+pnpm --filter @scope/ui test -- --runInBand
+pnpm turbo run test --concurrency=1 --filter=@scope/ui
+
+# Wrong: every package at once, each spawning a pool
+pnpm test
+```
+
+Treat an interrupted or machine-starving run as void; never report its numbers.
+Full detail, including how to scope tests to what changed, is in
+[CI & Preflight Strategy](/standards/quality/ci-preflight-strategy).
+
+### A green suite with no tests is a gap
+
+A package whose test script exits 0 on an empty suite (`--passWithNoTests` with no
+test files) reports green while covering nothing, and is indistinguishable in CI
+from one that is genuinely covered. Gates MUST count test files, not just check
+that a script exists.
 
 ## Flaky Test Policy
 

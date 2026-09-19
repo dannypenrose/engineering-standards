@@ -4,43 +4,181 @@
 
 ## Core Philosophy
 
-**Local-first quality gate system with deploy-only CI:**
+**A fast local gate, a thorough CI gate, and a deploy pipeline that only ships:**
 
-1. **Preflight (Local Pre-Push)** - Comprehensive gate that catches all quality issues before code reaches GitHub
-2. **Deploy (GitHub Actions)** - Build, bundle, and deploy only. No quality gates.
+1. **Preflight (local pre-push)**: fast, scoped to what changed, catches most problems before a push.
+2. **CI (on pull request)**: the complete gate, including the full test suite. No time budget.
+3. **Deploy (GitHub Actions)**: build, bundle, ship. No quality gates.
 
-**Key principle:** The pre-push hook is the single source of truth for code quality. If code passes the local gate, it is trusted for deployment. Deploy workflows do not duplicate quality checks — they exist solely to build artifacts and ship them to the server. This eliminates wasted CI minutes and removes the false safety net of "CI will catch it."
+**Key principle:** the local gate is scoped and fast; CI is complete. Local runs the
+checks that fit in a minute against the packages that changed, so a developer gets
+a quick answer. CI runs everything, because it has no time budget and a disposable
+runner. Deploy workflows trust both and only ship artifacts.
+
+> ### Why this changed
+>
+> This standard previously said the pre-push hook was "the single source of truth
+> for code quality" and that tests belonged in neither the hook nor CI, because
+> they were too slow. The consequence was predictable in hindsight: with no gate
+> anywhere, test suites rotted silently. A real monorepo audited under the old
+> rule had 106 failures in one app, a shared package reporting green with no test
+> files at all, and a suite that crashed the test process rather than failing.
+> None of it was visible, because nothing ran.
+>
+> A speed budget is a good reason to **scope** a gate. It is not a reason to
+> **remove** it. The split below keeps the sixty-second local budget by testing
+> only what changed, and moves completeness to CI where slowness costs nothing
+> a developer is waiting on.
 
 ---
 
 ## Division of Responsibility
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│           LOCAL (Pre-Push)         │   DEPLOY (GitHub Actions)  │
-├─────────────────────────────────────────────────────────────────┤
-│ ✅ Type checking                   │ ✅ Build                   │
-│ ✅ Linting                         │ ✅ Bundle preparation      │
-│ ✅ Build verification              │ ✅ rsync to server         │
-│ ✅ Standalone smoke test           │ ✅ Database migrations     │
-│ ✅ Dependency verification         │ ✅ Service restart          │
-│ ✅ Security scanning (quick)       │ ❌ NO quality gates        │
-│ ❌ NO tests (too slow)             │ ❌ NO smoke tests          │
-└─────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────┬──────────────────────────────┬─────────────────────────┐
+│      LOCAL (pre-push)        │        CI (pull request)     │  DEPLOY (on merge)      │
+├──────────────────────────────┼──────────────────────────────┼─────────────────────────┤
+│ ✅ Type check, changed only  │ ✅ Type check, everything    │ ✅ Build                │
+│ ✅ Lint, changed only        │ ✅ Lint, everything          │ ✅ Bundle preparation   │
+│ ✅ Build, changed only       │ ✅ Build, everything         │ ✅ rsync to server      │
+│ ✅ TESTS, changed packages   │ ✅ TESTS, full suite         │ ✅ Database migrations  │
+│ ✅ Standalone smoke test     │ ✅ Guardrail self-check      │ ✅ Service restart      │
+│ ✅ Dependency verification   │ ✅ Dependency verification   │ ❌ NO quality gates     │
+│ ⏱  Budget: under 60 seconds  │ ⏱  No budget                 │ ❌ NO tests             │
+└──────────────────────────────┴──────────────────────────────┴─────────────────────────┘
 ```
 
-> **Why no quality gates in CI?** The pre-push hook catches all quality issues before code ever reaches GitHub. Deploy workflows trust that the code has already been validated. This avoids paying for redundant CI minutes and keeps deploy pipelines fast and focused.
+> **Why quality gates in CI as well as locally?** A local hook is skippable
+> (`--no-verify`), is not installed until someone runs an install, and never runs
+> at all for a change made through the web UI. CI is the only gate that sees every
+> change. The local hook exists to give a fast answer, not to be the only answer.
+
+> **Why no gates in deploy?** By then the code has passed CI. Deploy exists to
+> build artifacts and ship them.
 
 ### Why This Split?
 
 | Concern | Preflight (Local) | Deploy (GitHub Actions) |
 |---------|-------------------|-------------------------|
-| **Speed** | Must complete in <60 seconds | As fast as possible — build + ship |
+| **Speed** | Must complete in <60 seconds | As fast as possible, build + ship |
 | **Environment** | Developer's machine | Clean runner |
-| **Purpose** | Catch all quality issues | Build and deploy only |
-| **Tests** | Skip (too slow for pre-push) | Skip (not CI's job) |
-| **Quality gates** | Type-check, lint, build, smoke test | None |
+| **Purpose** | Fast feedback on what changed | Build and deploy only |
+| **Tests** | Changed packages only, one at a time | Skip; CI has already run them |
+| **Quality gates** | Type-check, lint, build, smoke test, scoped tests | None |
 | **Turbo cache** | Local `.turbo/` cache | Restored via `actions/cache` for `.turbo/` |
+
+---
+
+## Running Tests Without Taking the Machine Down
+
+**Never run a whole monorepo's test suite in one command on a developer machine.**
+`pnpm test` at the root fans out across every package, and each package's runner
+then spawns its own worker pool. The worker counts multiply, memory runs out, and
+the machine can freeze.
+
+The second-order effect is worse than the inconvenience: **a starved run reports
+killed workers as failing tests.** The numbers from an overloaded run are false,
+and they send people chasing regressions that do not exist. A run that crashes the
+machine has told you nothing at all.
+
+| Do | Never |
+|---|---|
+| One package at a time, with an explicit filter | `pnpm test` from the monorepo root |
+| Bound the workers: `--runInBand`, or `-w 2` for a large suite | Let the runner size its own pool inside a parallel task runner |
+| Cap the task runner: `turbo run test --concurrency=1` | `turbo run test` at default concurrency |
+| Treat an interrupted run as void and rerun it | Report numbers from a starved or killed run |
+
+```bash
+# Correct: one package, bounded workers
+pnpm --filter @scope/ui test -- --runInBand
+
+# Correct: several packages, serialised at the task-runner level
+pnpm turbo run test --concurrency=1 --filter=@scope/ui --filter=@scope/utils
+
+# Wrong: every package at once, each spawning its own pool
+pnpm test
+```
+
+This applies to any command that fans out: builds, type-checks, lint and E2E runs
+alike. The unfiltered form belongs in CI, where the runner is disposable.
+
+### Scoping tests to what changed
+
+The local gate tests what the change can affect, not everything:
+
+| Changed | Test |
+|---|---|
+| An app | That app only |
+| A shared package | The package **and every consumer** (`--filter=...@scope/pkg`) |
+| A submodule pointer | Every package and its consumers; which files moved is not knowable from the parent repo |
+| A workspace root file (lockfile, root `package.json`, `turbo.json`, workspace or root tsconfig) | **Everything.** These affect every package, and a lockfile change is often a deploy trigger in its own right |
+| Docs only | Nothing |
+
+Anchor the root-file patterns (`^pnpm-lock\.yaml$`), or `apps/x/package.json` will
+trigger a full run every time.
+
+### A suite that passes with no tests is a gap, not a pass
+
+Two ways a package escapes notice:
+
+1. It declares no `test` script. At least this is honest.
+2. It declares one that exits 0 on an empty suite (`--passWithNoTests`). **This is
+   worse, because it reports green.** A reader of CI cannot tell it apart from a
+   package that is genuinely covered.
+
+The gate MUST count test files, not just check that a script exists, and MUST warn
+when a changed package has none.
+
+---
+
+## Guardrails Must Be Hard to Remove by Accident
+
+A guardrail that can be deleted without anyone noticing is not a guardrail.
+
+This is not hypothetical. In one repository the CI workflow was deleted as
+collateral in an unrelated feature pull request. The commit message never
+mentioned it, the branch protection that required it lapsed with it, and the
+project ran with no CI at all for months. Nobody noticed, because the thing that
+would have noticed was the thing that was deleted.
+
+**Every CI pipeline MUST include a guardrail self-check** that fails when the
+project's own quality machinery goes missing:
+
+```yaml
+- name: Guardrails present
+  run: |
+    missing=0
+    for f in .husky/pre-push scripts/preflight.sh .github/workflows/ci.yml; do
+      [ -f "$f" ] || { echo "::error::guardrail missing: $f"; missing=1; }
+    done
+    exit $missing
+```
+
+Cheap, and it turns a silent deletion into a failed check on the pull request
+that removes it.
+
+Where the plan allows it, also require the CI check in branch protection so a
+direct push to the default branch cannot skip it. Where it does not (GitHub's
+free plan does not offer branch protection on private repositories), say so in the
+project's README rather than assuming the protection exists.
+
+---
+
+## Every Repository Ships a Preflight Script
+
+Not every developer uses the same editor, and not every change is made with an
+assistant that knows the project's conventions. The gate has to live **in the
+repository**, as a script anyone can run:
+
+- `scripts/preflight.sh` (or the stack's equivalent), committed
+- wired to a package script (`pnpm preflight`) so it is discoverable
+- invoked by the pre-push hook
+- documented in the README
+
+Tooling that only works for one person, or only when an assistant is driving, is
+not a standard. It is a personal habit. Scaffolding (`create-app` and equivalents)
+MUST generate the script, the hook and the CI workflow, so a new project starts
+with the gate rather than acquiring one later, if anyone remembers.
 
 ---
 
