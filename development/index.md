@@ -19,4 +19,5 @@ Tooling, source control, and dependency management standards for all projects.
 | [Data Migration](/standards/development/data-migration) | Zero-downtime data transformation, batching, validation, rollback |
 | [Internationalization](/standards/development/internationalization) | i18n/l10n, ICU MessageFormat, RTL support, locale-aware formatting |
 | [Real-Time Communication](/standards/development/real-time-communication) | WebSocket, SSE, connection management, scaling patterns |
+| [Shell Scripting](/standards/development/shell-scripting) | Bash conventions, error handling, safe destructive operations, ShellCheck |
 | [State Management](/standards/development/state-management) | Server state, client state, URL state, form state patterns |
