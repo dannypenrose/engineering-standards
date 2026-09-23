@@ -2,7 +2,7 @@
 
 [![License: CC BY-NC-ND 4.0](https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-nd/4.0/)
 
-A comprehensive collection of 50 engineering standards covering the full software development lifecycle -- from coding conventions and API design through to security, reliability, deployment, and AI-assisted development.
+A comprehensive collection of 57 engineering standards covering the full software development lifecycle -- from coding conventions and API design through to security, reliability, deployment, and AI-assisted development.
 
 These standards are opinionated, production-tested, and designed to enforce consistency across projects regardless of team size. They draw on practices from leading technology organisations and align with established frameworks including OWASP, NIST, W3C (WCAG), and the SRE discipline.
 
@@ -15,6 +15,7 @@ These standards are opinionated, production-tested, and designed to enforce cons
 | [TypeScript](./typescript) | 4 | Coding standards and API design for both monorepo (Turborepo) and standalone (Next.js + NestJS) architectures |
 | [.NET](./dotnet) | 2 | C# coding standards and ASP.NET Core API design patterns |
 | [Python](./python) | 2 | PEP 8-aligned coding standards and FastAPI/Django API design |
+| [PHP](./php) | 3 | PER-aligned PHP coding standards, Laravel and WordPress REST API design, WordPress themes, plugins and site standards |
 
 ### Development Practices
 
@@ -75,6 +76,7 @@ engineering-standards/
 |-- development/            # Cross-cutting development practices
 |-- dotnet/                 # .NET / C# specific standards
 |-- governance/             # Security, compliance, and architecture
+|-- php/                    # PHP, Laravel, and WordPress standards
 |-- python/                 # Python specific standards
 |-- quality/                # Testing, reviews, and performance
 |-- reliability/            # Observability, SRE, and resilience
@@ -99,11 +101,11 @@ These standards are modelled on engineering practices at leading technology orga
 
 ## At a Glance
 
-- **51** standards documents
-- **8** categories
-- **~27,500** lines of actionable guidance
-- Covers **TypeScript**, **.NET**, and **Python** stacks
-- Framework-specific patterns for **Next.js**, **NestJS**, **ASP.NET Core**, **FastAPI**, **Expo**, **Tauri**, and more
+- **57** standards documents
+- **9** categories
+- **~31,000** lines of actionable guidance
+- Covers **TypeScript**, **.NET**, **Python**, and **PHP** stacks
+- Framework-specific patterns for **Next.js**, **NestJS**, **ASP.NET Core**, **FastAPI**, **Laravel**, **WordPress**, **Expo**, **Tauri**, and more
 - Full lifecycle: coding &rarr; testing &rarr; security &rarr; deployment &rarr; observability &rarr; incident response
 
 ## Disclaimer

@@ -84,6 +84,15 @@ Implementation standards for Python projects:
 - Type hints and validation
 - Python-specific tooling
 
+### [PHP Standards](/standards/php)
+
+Implementation standards for PHP projects:
+
+- Modern PHP coding standards (PER Coding Style, strict types, PHPStan)
+- Laravel and WordPress REST API design
+- WordPress themes, plugins, security and performance
+- Composer, Pest and WP-CLI tooling
+
 ### [AI-Assisted Development](/standards/ai)
 
 Standards for AI-assisted development:
