@@ -67,13 +67,6 @@ A well-designed skill follows this structure:
 | **Apply** | Follows the standard during code generation | Produces consistent, standards-compliant output |
 | **Cite** | References specific rules when correcting | Gives developers confidence in the correction |
 
-### Reference Implementation
-
-A reference implementation of this approach is available:
-
-- **[Agent Skills](https://github.com/dannypenrose/agent-skills)** -- 8 Claude Code skills covering API design, coding standards, database and migrations, deployment, observability, platform-specific patterns, security, and testing
-- **[Engineering Standards](https://github.com/dannypenrose/engineering-standards)** -- 50 standards documents that the skills reference as their source of truth
-
 This pattern is not Claude-specific. Any agentic coding tool that supports custom instructions or skill-like mechanisms can implement the same approach.
 
 ---

@@ -32,7 +32,7 @@ The recommended approach for any project using AI coding agents:
 3. **Configure your agent** -- Install skills so they activate without manual invocation
 4. **Review all output** -- AI-generated code must pass the same review bar as human-written code
 
-See [Agentic Coding Standards](/standards/ai/agentic-coding-standards) for the full approach, and the [Agent Skills](https://github.com/dannypenrose/agent-skills) repository for a reference implementation.
+See [Agentic Coding Standards](/standards/ai/agentic-coding-standards) for the full approach.
 
 ## When to Use AI Assistance
 

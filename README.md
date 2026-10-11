@@ -62,7 +62,7 @@ Consult the relevant standard before starting work on a feature, migration, depl
 
 ### 2. AI-Assisted Development
 
-Standards are integrated into [Claude Code](https://claude.ai/claude-code) workflows via [Agent Skills](https://github.com/dannypenrose/agent-skills) that automatically detect the tech stack being worked on and fetch the relevant standard before writing or reviewing code. This ensures AI-generated code follows the same conventions as human-written code.
+Standards are integrated into [Claude Code](https://claude.ai/claude-code) workflows via agent skills that automatically detect the tech stack being worked on and fetch the relevant standard before writing or reviewing code. This ensures AI-generated code follows the same conventions as human-written code.
 
 ### 3. Compliance Auditing
 
