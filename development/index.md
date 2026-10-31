@@ -13,6 +13,7 @@ Tooling, source control, and dependency management standards for all projects.
 | [Dependency Management](/standards/development/dependency-management) | Security scanning, license compliance, update policies |
 | [Deployment Standards](/standards/development/deployment-standards) | Deployment strategies, rollback, smoke testing, zero-downtime |
 | [Environment Management](/standards/development/environment-management) | Environment variables, secrets, .env conventions, environment parity |
+| [File Uploads](/standards/development/file-uploads) | Storage, validation, and deleting files with whatever owns them |
 | [API Versioning](/standards/development/api-versioning) | Version lifecycle, breaking changes, deprecation, sunset policies |
 | [Caching Strategy](/standards/development/caching-strategy) | HTTP caching, Redis, cache invalidation, stampede prevention |
 | [Containerization](/standards/development/containerization) | Docker images, multi-stage builds, security, registry management |

@@ -11,6 +11,9 @@ Security, compliance, data governance, and architecture decision standards for a
 | [Feature Flags](/standards/governance/feature-flags) | Progressive rollout, canary deployments, kill switches |
 | [Documentation Standards](/standards/governance/documentation-standards) | README templates, API docs, code comments, changelogs |
 | [Accessibility Standards](/standards/governance/accessibility-standards) | WCAG 2.1 AA compliance, testing procedures |
+| [UI Consistency](/standards/governance/ui-consistency) | Page anatomy, one action row, shared behaviours within an app and across a monorepo |
+| [Rich Text Editors](/standards/governance/rich-text-editors) | Which editor for which field, the shared toolbar with emoji, sanitising, display and reactions |
+| [Global Search](/standards/governance/global-search) | The ⌘K palette: layout, states, keyboard, accessibility and access-safe results |
 | [Database Standards](/standards/governance/database-standards) | Schema design, indexing, migrations, query optimization |
 | [ADR Template](/standards/governance/adr-template) | Architecture Decision Records template and guidelines |
 | [Infrastructure Security](/standards/governance/infrastructure-security) | Server hardening, firewall, SSH, TLS, container security |

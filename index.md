@@ -24,6 +24,7 @@ These standards ensure consistency and quality across all applications by establ
 Tooling, source control, dependency management, and cross-cutting development patterns:
 
 - Local development setup, deployment, and environment management
+- File uploads: storage, validation and deleting files with their owner
 - Git standards, hooks, and dependency management
 - Code sharing patterns and mobile/desktop/extension development
 - API versioning, caching, containerization, and real-time communication
@@ -55,6 +56,7 @@ Security, compliance, and architecture decisions:
 - Data governance and privacy
 - Feature flags
 - Documentation and accessibility standards
+- UI consistency, rich text editors and global search
 - Database standards and ADR templates
 
 ### [TypeScript Standards](/standards/typescript)

@@ -2,7 +2,7 @@
 
 [![License: CC BY-NC-ND 4.0](https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-nd/4.0/)
 
-A comprehensive collection of 57 engineering standards covering the full software development lifecycle -- from coding conventions and API design through to security, reliability, deployment, and AI-assisted development.
+A comprehensive collection of 61 engineering standards covering the full software development lifecycle -- from coding conventions and API design through to security, reliability, deployment, and AI-assisted development.
 
 These standards are opinionated, production-tested, and designed to enforce consistency across projects regardless of team size. They draw on practices from leading technology organisations and align with established frameworks including OWASP, NIST, W3C (WCAG), and the SRE discipline.
 
@@ -21,7 +21,7 @@ These standards are opinionated, production-tested, and designed to enforce cons
 
 | Category | Documents | Covers |
 |----------|-----------|--------|
-| [Development](./development) | 19 | API versioning, caching, CI/CD pipelines, containerisation, Chrome extensions, code sharing, data migration, dependency management, deployment, desktop (Tauri), environment management, Git standards & hooks, internationalisation, local development, mobile (Expo/React Native), real-time communication, state management, workspace tasks |
+| [Development](./development) | 21 | API versioning, caching, CI/CD pipelines, containerisation, Chrome extensions, code sharing, data migration, dependency management, deployment, desktop (Tauri), environment management, file uploads, Git standards & hooks, internationalisation, local development, mobile (Expo/React Native), real-time communication, state management, workspace tasks |
 
 ### Quality & Reliability
 
@@ -34,7 +34,7 @@ These standards are opinionated, production-tested, and designed to enforce cons
 
 | Category | Documents | Covers |
 |----------|-----------|--------|
-| [Governance](./governance) | 10 | Security guidelines (OWASP Top 10), infrastructure security, data governance & privacy, database standards, documentation standards, feature flags, accessibility (WCAG), ADR templates, open-source policy, self-hosting |
+| [Governance](./governance) | 14 | Security guidelines (OWASP Top 10), infrastructure security, data governance & privacy, database standards, documentation standards, feature flags, accessibility (WCAG), notifications & confirmations, UI consistency, rich text editors, global search, ADR templates, open-source policy, self-hosting |
 
 ### AI-Assisted Development
 
