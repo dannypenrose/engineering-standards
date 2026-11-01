@@ -27,6 +27,7 @@ Tooling, source control, dependency management, and cross-cutting development pa
 - File uploads: storage, validation and deleting files with their owner
 - Git standards, hooks, and dependency management
 - Code sharing patterns and mobile/desktop/extension development
+- Electron desktop apps: security baseline, shared shell, signing and updates
 - API versioning, caching, containerization, and real-time communication
 - Internationalization, state management, and data migration
 

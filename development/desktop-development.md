@@ -2,6 +2,8 @@
 
 > Authoritative desktop development standards for Tauri v2 applications across all projects.
 
+For Electron apps, see [Electron Development](/standards/development/electron-development).
+
 ## Purpose
 
 Establish consistent patterns for building, testing, and distributing native desktop applications using Tauri v2 with Rust backends and web-based frontends (standalone HTML/CSS/JS or wrapping existing web applications).

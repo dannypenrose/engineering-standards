@@ -21,7 +21,7 @@ These standards are opinionated, production-tested, and designed to enforce cons
 
 | Category | Documents | Covers |
 |----------|-----------|--------|
-| [Development](./development) | 21 | API versioning, caching, CI/CD pipelines, containerisation, Chrome extensions, code sharing, data migration, dependency management, deployment, desktop (Tauri), environment management, file uploads, Git standards & hooks, internationalisation, local development, mobile (Expo/React Native), real-time communication, state management, workspace tasks |
+| [Development](./development) | 22 | API versioning, caching, CI/CD pipelines, containerisation, Chrome extensions, code sharing, data migration, dependency management, deployment, desktop (Tauri), desktop (Electron), environment management, file uploads, Git standards & hooks, internationalisation, local development, mobile (Expo/React Native), real-time communication, state management, workspace tasks |
 
 ### Quality & Reliability
 
@@ -105,7 +105,7 @@ These standards are modelled on engineering practices at leading technology orga
 - **9** categories
 - **~31,000** lines of actionable guidance
 - Covers **TypeScript**, **.NET**, **Python**, and **PHP** stacks
-- Framework-specific patterns for **Next.js**, **NestJS**, **ASP.NET Core**, **FastAPI**, **Laravel**, **WordPress**, **Expo**, **Tauri**, and more
+- Framework-specific patterns for **Next.js**, **NestJS**, **ASP.NET Core**, **FastAPI**, **Laravel**, **WordPress**, **Expo**, **Tauri**, **Electron**, and more
 - Full lifecycle: coding &rarr; testing &rarr; security &rarr; deployment &rarr; observability &rarr; incident response
 
 ## Disclaimer
