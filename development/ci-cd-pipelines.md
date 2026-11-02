@@ -234,15 +234,15 @@ rsync -rz --delete \
 | `--delete` | Remove files on server that are no longer in source |
 | `--no-times --no-perms --no-owner --no-group` | Avoid permission conflicts with systemd service user |
 | `--omit-dir-times` | Skip directory timestamp updates |
-| `-L` | Dereference symlinks (required for monorepo backends using `pnpm deploy`) |
+| `-l --safe-links --force` | Keep symlinks, drop any that leave the bundle, replace old folders with links (required for monorepo backends using `pnpm deploy`) |
 
-**Monorepo backends (`pnpm deploy --prod`):** Add `-L` (`--copy-links`) to dereference workspace symlinks. `pnpm deploy` creates symlinks for workspace packages (e.g. `@org/*`) in `node_modules/`. Without `-L`, rsync silently skips them and shared module code never reaches the server.
+**Monorepo backends (`pnpm deploy --prod`):** Add `-l --safe-links --force`. `pnpm deploy` builds `node_modules/` from symlinks into `node_modules/.pnpm`, workspace packages (e.g. `@org/*`) included. Plain `-r` silently skips symlinks, so shared module code never reaches the server. Do not use `-L` (`--copy-links`): it copies each linked package flat into `node_modules/`, where Node resolves its dependencies from the hoisted top level instead of its own `.pnpm` siblings, so a package that needs a newer version than the hoisted one fails to load (`Cannot find module 'entities/decode'` from htmlparser2 10 against a hoisted entities 2). `--safe-links` drops links that point outside the bundle (the app's own self-link back to the CI checkout); `--force` lets rsync replace a folder left by an earlier `-L` deploy with a link.
 
-> **Important:** If the deploy bundle cleanup removes large packages (e.g. `next`, `@playwright`, `prettier`), run `find . -xtype l -delete 2>/dev/null || true` afterwards to prune dangling symlinks. With `-L`, rsync will error on broken symlinks (`symlink has no referent`, exit code 23).
+> **Important:** If the deploy bundle cleanup removes large packages (e.g. `next`, `@playwright`, `prettier`), run `find . -xtype l -delete 2>/dev/null || true` afterwards to prune dangling symlinks. Dangling links otherwise reach the server as broken links.
 
 ```yaml
 # Backend (monorepo with workspace packages)
-rsync -rzL --delete \
+rsync -rzl --safe-links --force --delete \
   --no-times --no-perms --no-owner --no-group --omit-dir-times \
   /tmp/deploy-backend/ \
   ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:{DEST}/
