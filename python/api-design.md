@@ -401,6 +401,111 @@ app.openapi = custom_openapi
 app.include_router(api_router)
 ```
 
+## Authorisation and Data Scope
+
+Authentication says who the caller is; authorisation decides what they may see and change. Apply the [Authorisation and Data Scope](/standards/governance/authorisation-and-data-scope) standard to every endpoint. The rules most often missed:
+
+- **One shared permission policy** evaluates every setting (tenant, record visibility, per-action levels, account-wide flags). Endpoints call it; none re-implement a rule.
+- **Scope the query, not the response.** Lists, single records, related lists, counts, search, exports, reports and bulk actions all start from the policy's scoped set. Checking only the detail endpoint leaves the same records exposed through the list, the search box and the export.
+- **Updates and deletes check the stored record's owners**, loaded through the scoped set, not the owners sent in the request.
+- **Ownership matches every identity the user has** (for example a legacy id and a current id, or a primary and secondary owner).
+- **Never take the tenant or acting user from input.** Derive them from the authenticated session. Resolve every id in the request, including ids nested in payloads, through the scoped set; narrow bulk actions to the ids the caller may act on.
+- **Bypassing global query filters re-applies the tenant condition explicitly.**
+- **Deny by default.** Unset permissions are the most restrictive value; a user whose record cannot be loaded gets nothing.
+- **Status codes:** a hidden record is `404`; a refused action is `403` with a readable reason naming the setting; never `401`, which clients treat as signed out.
+- **Exports need the export permission**, settings exports included.
+- **Identifiers from configuration used in SQL** (column names) are validated against a strict allow-list; every value is parameterised.
+- **Enforced by tests:** policy tests, enforcement tests with a restricted user, a two-tenant isolation suite generated from the route list and run against the real database engine, and architecture tests that fail the build when a route lacks its gate.
+
+### Example: Scoped FastAPI Routes
+
+The policy comes from `Depends(get_current_user)`, never from the request; every query starts from its scoped `select`, and the export route depends on the export permission.
+
+```python
+# app/api/v1/routes/contacts.py
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.api.deps import get_current_user, get_db, require_permission
+from app.core.permissions import Permission, PermissionPolicy
+from app.models.contact import Contact
+from app.models.user import User
+from app.schemas.contact import ContactResponse, ContactUpdate, PaginatedContacts
+
+router = APIRouter()
+
+
+async def get_policy(
+    user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> PermissionPolicy:
+    """Build the caller's policy from the session and a fresh read of their permissions."""
+    return await PermissionPolicy.for_user(db, user)
+
+
+@router.get("/", response_model=PaginatedContacts)
+async def list_contacts(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    policy: Annotated[PermissionPolicy, Depends(get_policy)],
+    page: int = 1,
+    page_size: int = 20,
+) -> PaginatedContacts:
+    """List the contacts the caller may see."""
+    # Scope first, then filters, sorting and paging
+    query = policy.visible(select(Contact))
+    total = await db.scalar(select(func.count()).select_from(query.subquery()))
+    rows = await db.scalars(query.offset((page - 1) * page_size).limit(page_size))
+    return PaginatedContacts(items=list(rows), total=total or 0)
+
+
+@router.put(
+    "/{contact_id}",
+    response_model=ContactResponse,
+    responses={403: {"description": "Not allowed"}, 404: {"description": "Not found"}},
+)
+async def update_contact(
+    contact_id: int,
+    payload: ContactUpdate,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    policy: Annotated[PermissionPolicy, Depends(get_policy)],
+) -> ContactResponse:
+    """Update a contact the caller may see and edit."""
+    contact = await db.scalar(policy.visible(select(Contact)).where(Contact.id == contact_id))
+    if contact is None:
+        # Hidden and missing look the same
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Contact not found")
+
+    # Check the stored owners, not the owners in the request
+    if not policy.can_edit(contact):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=(
+                "Your permissions do not allow you to edit this contact. "
+                "Ask an administrator to switch on Edit contacts."
+            ),
+        )
+
+    contact.apply(payload)
+    await db.commit()
+    return ContactResponse.model_validate(contact)
+
+
+@router.get(
+    "/export",
+    dependencies=[Depends(require_permission(Permission.EXPORT_RECORDS))],
+)
+async def export_contacts(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    policy: Annotated[PermissionPolicy, Depends(get_policy)],
+):
+    """Export the contacts the caller may see."""
+    rows = await db.scalars(policy.visible(select(Contact)))
+    return csv_response(rows, filename="contacts.csv")
+```
+
 ## Django REST Framework Patterns
 
 ### ViewSet Pattern
@@ -459,6 +564,15 @@ class UserViewSet(viewsets.ModelViewSet):
 - [ ] Authorization checks implemented
 - [ ] Rate limiting configured
 - [ ] CORS properly configured
+
+### Authorisation and Data Scope
+
+- [ ] Every endpoint applies the shared permission policy (lists, details, related lists, counts, search, exports, reports, bulk actions)
+- [ ] Updates and deletes check the stored record's owners through the scoped set
+- [ ] No tenant or user id taken from input; nested ids resolved through the scoped set
+- [ ] Hidden records `404`, refused actions `403` with a reason, never `401`
+- [ ] Export routes gated on the export permission
+- [ ] Two-tenant isolation tests generated from the route list, run against the real database
 
 ## References
 

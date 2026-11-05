@@ -7,6 +7,7 @@ Security, compliance, data governance, and architecture decision standards for a
 | Standard | Description |
 | -------- | ----------- |
 | [Security Guidelines](/standards/governance/security-guidelines) | OWASP compliance, input validation, secrets management |
+| [Authorisation and Data Scope](/standards/governance/authorisation-and-data-scope) | Tenant and user scope, one permission policy applied to every list, search, export and bulk action |
 | [Data Governance & Privacy](/standards/governance/data-governance) | GDPR/CCPA compliance, PII handling, data retention |
 | [Feature Flags](/standards/governance/feature-flags) | Progressive rollout, canary deployments, kill switches |
 | [Documentation Standards](/standards/governance/documentation-standards) | README templates, API docs, code comments, changelogs |

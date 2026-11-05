@@ -19,7 +19,7 @@ Establish security practices that protect applications from common vulnerabiliti
 
 | Vulnerability | Mitigation | Implementation |
 | ------------- | ---------- | -------------- |
-| A01: Broken Access Control | Role-based access, resource authorization | Auth guards, ownership checks |
+| A01: Broken Access Control | Tenant and user scope on every query, resource authorization | One shared permission policy, ownership checks on stored records ([Authorisation and Data Scope](/standards/governance/authorisation-and-data-scope)) |
 | A02: Cryptographic Failures | TLS 1.3, strong algorithms, proper key management | HTTPS only, bcrypt/argon2 |
 | A03: Injection | Parameterized queries, input validation | ORM, prepared statements |
 | A04: Insecure Design | Threat modeling, secure patterns | Security reviews, STRIDE |
