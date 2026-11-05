@@ -19,6 +19,7 @@ Tooling, source control, and dependency management standards for all projects.
 | [Caching Strategy](/standards/development/caching-strategy) | HTTP caching, Redis, cache invalidation, stampede prevention |
 | [Containerization](/standards/development/containerization) | Docker images, multi-stage builds, security, registry management |
 | [Data Migration](/standards/development/data-migration) | Zero-downtime data transformation, batching, validation, rollback |
+| [MCP Servers](/standards/development/mcp-servers) | Remote MCP servers for AI apps: OAuth, the consent screen and data notice, user and tenant scope, safe tool design |
 | [Internationalization](/standards/development/internationalization) | i18n/l10n, ICU MessageFormat, RTL support, locale-aware formatting |
 | [Real-Time Communication](/standards/development/real-time-communication) | WebSocket, SSE, connection management, scaling patterns |
 | [Shell Scripting](/standards/development/shell-scripting) | Bash conventions, error handling, safe destructive operations, ShellCheck |

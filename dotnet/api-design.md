@@ -220,6 +220,117 @@ public class UsersController : ControllerBase
 }
 ```
 
+## Authorisation and Data Scope
+
+Authentication says who the caller is; authorisation decides what they may see and change. Apply the [Authorisation and Data Scope](/standards/governance/authorisation-and-data-scope) standard to every endpoint. The rules most often missed:
+
+- **One shared permission policy** evaluates every setting (tenant, record visibility, per-action levels, account-wide flags). Endpoints call it; none re-implement a rule.
+- **Scope the query, not the response.** Lists, single records, related lists, counts, search, exports, reports and bulk actions all start from the policy's scoped set. Checking only the detail endpoint leaves the same records exposed through the list, the search box and the export.
+- **Updates and deletes check the stored record's owners**, loaded through the scoped set, not the owners sent in the request.
+- **Ownership matches every identity the user has** (for example a legacy id and a current id, or a primary and secondary owner).
+- **Never take the tenant or acting user from input.** Derive them from the authenticated session. Resolve every id in the request, including ids nested in payloads, through the scoped set; narrow bulk actions to the ids the caller may act on.
+- **Bypassing global query filters re-applies the tenant condition explicitly.**
+- **Deny by default.** Unset permissions are the most restrictive value; a user whose record cannot be loaded gets nothing.
+- **Status codes:** a hidden record is `404`; a refused action is `403` with a readable reason naming the setting; never `401`, which clients treat as signed out.
+- **Exports need the export permission**, settings exports included.
+- **Identifiers from configuration used in SQL** (column names) are validated against a strict allow-list; every value is parameterised.
+- **Enforced by tests:** policy tests, enforcement tests with a restricted user, a two-tenant isolation suite generated from the route list and run against the real database engine, and architecture tests that fail the build when a route lacks its gate.
+
+### Example: Scoped Controller
+
+The policy is built from the session (the tenant filter is global in the `DbContext`); every query starts from its scoped set, and the export route is gated on its permission.
+
+```csharp
+// Controllers/ContactsController.cs
+[ApiController]
+[Route("api/v{version:apiVersion}/contacts")]
+[ApiVersion("1.0")]
+[Authorize]
+public class ContactsController : ControllerBase
+{
+    private readonly AppDbContext _db;
+    private readonly IPermissionPolicyFactory _policies;
+
+    public ContactsController(AppDbContext db, IPermissionPolicyFactory policies)
+    {
+        _db = db;
+        _policies = policies;
+    }
+
+    /// <summary>
+    /// List the contacts the caller may see
+    /// </summary>
+    [HttpGet]
+    [ProducesResponseType(typeof(PagedApiResponse<ContactDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetContacts(
+        [FromQuery] GetContactsRequest request,
+        CancellationToken cancellationToken)
+    {
+        // Tenant and user come from the session, never from the request
+        var policy = await _policies.ForCurrentUserAsync(cancellationToken);
+
+        // Scope first, then apply the caller's filters, sorting and paging
+        var result = await policy.Visible(_db.Contacts)
+            .ApplyFilters(request)
+            .ToPagedResponseAsync(request.Page, request.Limit, cancellationToken);
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Update a contact
+    /// </summary>
+    [HttpPut("{id:guid}")]
+    [ProducesResponseType(typeof(ApiResponse<ContactDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateContact(
+        Guid id,
+        [FromBody] UpdateContactRequest request,
+        CancellationToken cancellationToken)
+    {
+        var policy = await _policies.ForCurrentUserAsync(cancellationToken);
+
+        // Load through the scoped set: hidden and missing look the same
+        var contact = await policy.Visible(_db.Contacts)
+            .SingleOrDefaultAsync(c => c.Id == id, cancellationToken);
+        if (contact is null)
+        {
+            return NotFound();
+        }
+
+        // Check the action against the stored owners, not the owners in the request
+        if (!policy.CanEdit(contact))
+        {
+            return Problem(
+                statusCode: StatusCodes.Status403Forbidden,
+                title: "Forbidden",
+                detail: "Your permissions do not allow you to edit this contact. Ask an administrator to switch on Edit contacts.");
+        }
+
+        contact.Apply(request);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return Ok(new ApiResponse<ContactDto> { Data = contact.ToDto() });
+    }
+
+    /// <summary>
+    /// Export the contacts the caller may see
+    /// </summary>
+    [HttpGet("export")]
+    [RequirePermission(Permission.ExportRecords)]
+    public async Task<IActionResult> ExportContacts(CancellationToken cancellationToken)
+    {
+        var policy = await _policies.ForCurrentUserAsync(cancellationToken);
+        var rows = await policy.Visible(_db.Contacts)
+            .Select(c => c.ToExportRow())
+            .ToListAsync(cancellationToken);
+
+        return File(CsvExport.Write(rows), "text/csv", "contacts.csv");
+    }
+}
+```
+
 ## Error Handling
 
 ### Problem Details Configuration
@@ -462,6 +573,15 @@ builder.Services.AddFluentValidationAutoValidation();
 - [ ] All endpoints documented
 - [ ] Authentication documented
 - [ ] Example requests/responses
+
+### Authorisation and Data Scope
+
+- [ ] Every endpoint applies the shared permission policy (lists, details, related lists, counts, search, exports, reports, bulk actions)
+- [ ] Updates and deletes check the stored record's owners through the scoped set
+- [ ] No tenant or user id taken from input; nested ids resolved through the scoped set
+- [ ] Hidden records `404`, refused actions `403` with a reason, never `401`
+- [ ] Export routes gated on the export permission
+- [ ] Two-tenant isolation tests generated from the route list, run against the real database
 
 ## References
 

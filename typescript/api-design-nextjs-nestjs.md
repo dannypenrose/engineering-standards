@@ -462,6 +462,100 @@ export function useDeleteUser() {
 }
 ```
 
+## Authorisation and Data Scope
+
+Authentication says who the caller is; authorisation decides what they may see and change. Apply the [Authorisation and Data Scope](/standards/governance/authorisation-and-data-scope) standard to every endpoint. The rules most often missed:
+
+- **One shared permission policy** evaluates every setting (tenant, record visibility, per-action levels, account-wide flags). Endpoints call it; none re-implement a rule.
+- **Scope the query, not the response.** Lists, single records, related lists, counts, search, exports, reports and bulk actions all start from the policy's scoped set. Checking only the detail endpoint leaves the same records exposed through the list, the search box and the export.
+- **Updates and deletes check the stored record's owners**, loaded through the scoped set, not the owners sent in the request.
+- **Ownership matches every identity the user has** (for example a legacy id and a current id, or a primary and secondary owner).
+- **Never take the tenant or acting user from input.** Derive them from the authenticated session. Resolve every id in the request, including ids nested in payloads, through the scoped set; narrow bulk actions to the ids the caller may act on.
+- **Bypassing global query filters re-applies the tenant condition explicitly.**
+- **Deny by default.** Unset permissions are the most restrictive value; a user whose record cannot be loaded gets nothing.
+- **Status codes:** a hidden record is `404`; a refused action is `403` with a readable reason naming the setting; never `401`, which clients treat as signed out.
+- **Exports need the export permission**, settings exports included.
+- **Identifiers from configuration used in SQL** (column names) are validated against a strict allow-list; every value is parameterised.
+- **Enforced by tests:** policy tests, enforcement tests with a restricted user, a two-tenant isolation suite generated from the route list and run against the real database engine, and architecture tests that fail the build when a route lacks its gate.
+
+### Example: Guard and Scoped Query
+
+A guard gates account-wide actions such as export; the service starts every query from the policy's scoped `where`, so lists, single records and exports share one rule.
+
+```typescript
+// backend/src/contacts/contacts.controller.ts
+@ApiTags('contacts')
+@Controller('api/v1/contacts')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
+export class ContactsController {
+  constructor(private readonly contactsService: ContactsService) {}
+
+  @Get()
+  async findAll(
+    @CurrentUser() user: AuthUser, // tenant and user come from the session
+    @Query() query: QueryContactsDto,
+  ): Promise<ContactsListResponse> {
+    return this.contactsService.findAll(user, query);
+  }
+
+  @Put(':id')
+  @ApiResponse({ status: 403, description: 'Action not allowed by your permissions' })
+  @ApiResponse({ status: 404, description: 'Contact not found' })
+  async update(
+    @CurrentUser() user: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateContactDto,
+  ): Promise<ContactResponse> {
+    const contact = await this.contactsService.update(user, id, dto);
+    return { contact };
+  }
+
+  @Get('export')
+  @RequirePermissions('records:export')
+  async export(@CurrentUser() user: AuthUser): Promise<StreamableFile> {
+    return this.contactsService.exportCsv(user);
+  }
+}
+
+// backend/src/contacts/contacts.service.ts
+@Injectable()
+export class ContactsService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly policies: PermissionPolicyService,
+  ) {}
+
+  async findAll(user: AuthUser, query: QueryContactsDto) {
+    const policy = await this.policies.forUser(user);
+    // Scope first, then the caller's filters on top
+    const where = { AND: [policy.visibleWhere('contact'), buildContactFilters(query)] };
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.contact.findMany({ where, skip: query.offset, take: query.limit }),
+      this.prisma.contact.count({ where }),
+    ]);
+    return { items, total };
+  }
+
+  async update(user: AuthUser, id: string, dto: UpdateContactDto) {
+    const policy = await this.policies.forUser(user);
+    const contact = await this.prisma.contact.findFirst({
+      where: { AND: [{ id }, policy.visibleWhere('contact')] },
+    });
+    // Hidden and missing look the same
+    if (!contact) throw new NotFoundException('Contact not found');
+
+    // Check the stored owners, not the owners in the request
+    if (!policy.canEdit('contact', contact)) {
+      throw new ForbiddenException(
+        'Your permissions do not allow you to edit this contact. Ask an administrator to switch on Edit contacts.',
+      );
+    }
+
+    return this.prisma.contact.update({ where: { id: contact.id }, data: dto });
+  }
+}
+```
+
 ## CORS Configuration
 
 ```typescript
@@ -506,6 +600,15 @@ bootstrap();
 - [ ] Shared types between frontend/backend
 - [ ] Environment variables for API URL
 - [ ] Authentication token handling
+
+### Authorisation and Data Scope
+
+- [ ] Every endpoint applies the shared permission policy (lists, details, related lists, counts, search, exports, reports, bulk actions)
+- [ ] Updates and deletes check the stored record's owners through the scoped set
+- [ ] No tenant or user id taken from input; nested ids resolved through the scoped set
+- [ ] Hidden records `404`, refused actions `403` with a reason, never `401`
+- [ ] Export routes gated on the export permission
+- [ ] Two-tenant isolation tests generated from the route list, run against the real database
 
 ## References
 
