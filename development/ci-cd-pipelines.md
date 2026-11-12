@@ -256,17 +256,36 @@ rsync -rzl --safe-links --force --delete \
 
 ### SSH Keepalive
 
-Always use `-o ServerAliveInterval=30` on SSH commands that may take time (installs, migrations, restarts):
+Always use `-o ServerAliveInterval=30` on SSH commands that may take time (migrations, restarts):
 
 ```yaml
-- name: Install and Restart
+- name: Restart
   run: |
-    ssh -o ServerAliveInterval=30 ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} <<EOF
-      cd /var/www/{APP_NAME}
-      npm ci --omit=dev
+    ssh -o ServerAliveInterval=30 ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} 'bash -s' <<'EOF'
+      set -euo pipefail
       sudo systemctl restart {APP_NAME}
+      sleep 3
+      systemctl is-active --quiet {APP_NAME}
     EOF
 ```
+
+`set -euo pipefail` and the `is-active` check make a unit that does not come back fail the deploy. Never install
+dependencies on the server (see [Ship dependencies, never install on the server](#ship-dependencies-never-install-on-the-server)).
+
+### Ship dependencies, never install on the server
+
+Install and prune dependencies on the runner and rsync them with the build. The server only restarts.
+
+**Why:** a small droplet has too little free memory for `npm ci`. On 2026-11-12 `npm ci --omit=dev` on a 4 GB
+droplet running eight apps (about 0.9 GB free) was killed by the kernel twice (exit 137). `npm ci` deletes
+`node_modules` before it reinstalls, so each kill left the live app with half its dependencies: still running on
+what it had loaded, but unable to start again. Installing on the runner also makes the deploy repeatable: the
+server runs exactly what CI built.
+
+**Condition:** native modules (Prisma engines, libsql, sharp, better-sqlite3) are compiled for the runner. This is
+safe only while the runner and the server share an OS and architecture: `ubuntu-latest` on x64 against an Ubuntu
+24.04 x64 droplet. A server on another architecture (an ARM machine, an Ubuntu VM on Apple silicon) needs a
+matching runner (`ubuntu-24.04-arm`) or a Prisma `binaryTargets` entry for it.
 
 ### SERVER_USER
 
@@ -426,6 +445,12 @@ jobs:
           NODE_ENV: production
         run: npm run build
 
+      # Production dependencies are installed here and shipped; the server
+      # never runs npm (see "Ship dependencies, never install on the server").
+      - name: Prune Dev Dependencies
+        working-directory: {SOURCE_DIR}
+        run: npm prune --omit=dev
+
       - name: Setup SSH Agent
         uses: webfactory/ssh-agent@v0.9.0
         with:
@@ -453,14 +478,25 @@ jobs:
             {SOURCE_DIR}/public/ \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:/var/www/{APP_NAME}/public/
 
-      - name: Install and Restart
+          # -l keeps node_modules/.bin links (`next start` runs through them);
+          # --safe-links drops any link that points outside the bundle.
+          rsync -rzl --safe-links --delete \
+            --no-times --no-perms --no-owner --no-group --omit-dir-times \
+            {SOURCE_DIR}/node_modules/ \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:/var/www/{APP_NAME}/node_modules/
+
+      - name: Restart
         run: |
-          ssh -o ServerAliveInterval=30 ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} <<EOF
-            cd /var/www/{APP_NAME}
-            npm ci --omit=dev
+          ssh -o ServerAliveInterval=30 ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} 'bash -s' <<'EOF'
+            set -euo pipefail
             sudo systemctl restart {APP_NAME}
+            sleep 3
+            systemctl is-active --quiet {APP_NAME}
           EOF
 ```
+
+A Next.js app built with `output: 'standalone'` ships its own traced `node_modules` inside `.next/standalone`, so it
+needs neither the prune step nor the `node_modules` rsync; it runs with `node server.js`, as the Forge frontends do.
 
 #### NEXT_PUBLIC Environment Variables
 
@@ -494,7 +530,11 @@ if [ -d "{SOURCE_DIR}/prisma" ]; then
 fi
 ```
 
-Run `prisma generate` on the server after install to produce the correct Linux binary.
+The client is generated on the runner, before the prune step removes the `prisma` CLI. With the default output it
+lands in `node_modules/.prisma` and ships with `node_modules`; a custom `output` folder (for example
+`lib/generated/prisma`) needs its own rsync. The runner's Linux engine runs on the server only under the condition in
+[Ship dependencies, never install on the server](#ship-dependencies-never-install-on-the-server); never run
+`prisma generate` or an install on the server.
 
 ### .NET (ASP.NET Core)
 
@@ -623,7 +663,8 @@ No service restart, no install, no build (unless using a static site generator).
 | Quality gates in deploy CI | Duplicates pre-push hook work | Pre-push hooks locally |
 | Reusable deploy workflow | Adds indirection without real DRY benefit | Inline deploy steps |
 | `--no-verify` on git push | Bypasses quality gates | Never skip hooks |
-| `npm install --production` | Deprecated flag | `npm ci --omit=dev` |
+| `npm install --production` | Deprecated flag | `npm prune --omit=dev` on the runner |
+| `npm ci` (or any install) on the server | Killed for lack of memory on a small droplet, leaving `node_modules` half deleted under a live app | Install and prune on the runner, rsync `node_modules`; the server only restarts |
 | Hardcoded Node version | Hard to update | `env.NODE_VERSION` |
 | Missing `concurrency:` | Overlapping deploys corrupt state | Always add concurrency group |
 | `SERVER_USER: ops` | Permission conflicts with systemd | Use app-specific deploy user |
@@ -642,6 +683,7 @@ When creating a new deploy workflow, verify:
 - [ ] Single job (OneRunner) — no artefact upload/download
 - [ ] rsync uses standard flag set (`-rz --delete --no-times --no-perms --no-owner --no-group --omit-dir-times`)
 - [ ] SSH keepalive (`-o ServerAliveInterval=30`) on long-running SSH commands
+- [ ] Nothing is installed on the server: dependencies are pruned on the runner and shipped, and the remote step only restarts and checks the unit is active
 - [ ] `SERVER_USER` is the app-specific deploy user
 - [ ] No lint/test/type-check steps (these belong in pre-push hooks)
 - [ ] Lockfile committed to repo (required for cache key generation)
