@@ -122,16 +122,17 @@ webPreferences: {
 
 | Rule | Detail |
 | ---- | ------ |
-| Tag-triggered | A `vX.Y.Z` tag on `main` runs the release workflow; the version in `package.json` matches the tag |
-| Public releases repository | Installers and update manifests publish to a public, releases-only repository; the source can stay private |
-| One draft per release | A first job creates the draft release; build jobs upload to it rather than racing to create their own |
-| Update manifests list every arch | When Mac arches build on separate runners, a final job merges `latest-mac.yml` to list both, or one arch never updates |
-| Least-privilege tokens | A read-only token installs private dependencies; a write token scoped to the releases repository publishes. Checkouts use `persist-credentials: false` so the workflow token does not override them |
+| Tagged releases | Each release is a `vX.Y.Z` tag on `main` (`npm version`); the version in `package.json` matches the tag |
+| Self-hosted update feed | Installers and update manifests publish to a static feed the organisation hosts (electron-updater's `generic` provider, `build.publish.url` per app), not to a GitHub releases repository; source and binaries stay off GitHub |
+| Manifests last | The publish step uploads every installer and blockmap before the `latest*.yml` that names them, and checks each manifest's version and file names first, so a client never sees a release whose files are missing |
+| Revalidate, don't cache blindly | When installer names carry no version (one stable URL per platform), the feed serves everything with `Cache-Control: no-cache`, or a cached old installer fails the new manifest's checksum |
+| Update manifests list every arch | When Mac arches build on separate machines, a final step merges `latest-mac.yml` to list both, or one arch never updates |
+| Least-privilege upload | The upload credential can write only into the feed folder (for example rrsync, write only, no deletes) and nothing else on the server. A read-only token installs private dependencies; CI checkouts use `persist-credentials: false` so the workflow token does not override it |
 | Shared secret names | Signing secrets have the same names in every desktop app, so workflows stay identical |
 | Signed and notarised | macOS: Developer ID, hardened runtime, notarisation; Windows: signed when a certificate is available. Unsigned builds are for local testing only |
 | Minimal entitlements | Only the entitlements the app needs, each with a comment; remove ones a retired feature needed |
 | Updates in the background | The updater runs in packaged builds only, downloads in the background, installs on quit and offers a restart; a manual "Check for Updates" reports errors |
-| Check what users download | After publishing, verify the asset names that download pages link to exist on the latest release |
+| Check what users download | After publishing, verify that the feed's manifests show the new version and that the installer names download pages link to exist in the feed |
 
 ## Machine safety
 
