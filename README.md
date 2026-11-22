@@ -21,7 +21,7 @@ These standards are opinionated, production-tested, and designed to enforce cons
 
 | Category | Documents | Covers |
 |----------|-----------|--------|
-| [Development](./development) | 22 | API versioning, caching, CI/CD pipelines, containerisation, Chrome extensions, code sharing, data migration, dependency management, deployment, desktop (Tauri), desktop (Electron), environment management, file uploads, Git standards & hooks, internationalisation, local development, mobile (Expo/React Native), real-time communication, state management, workspace tasks |
+| [Development](./development) | 23 | API versioning, caching, CI/CD pipelines, containerisation, Chrome extensions, code sharing, data migration, dependency management, deployment, desktop (Tauri), desktop (Electron), desktop releases, environment management, file uploads, Git standards & hooks, internationalisation, local development, mobile (Expo/React Native), real-time communication, state management, workspace tasks |
 
 ### Quality & Reliability
 

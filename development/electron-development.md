@@ -2,7 +2,7 @@
 
 > Authoritative standards for building, securing, packaging and releasing Electron desktop applications, including apps built on a shared Electron shell package.
 
-Related standards: [Desktop Development (Tauri)](/standards/development/desktop-development), [Security Guidelines](/standards/governance/security-guidelines), [Dependency Management](/standards/development/dependency-management), [CI/CD Pipelines](/standards/development/ci-cd-pipelines), [Code Sharing](/standards/development/code-sharing).
+Related standards: [Desktop Releases](/standards/development/desktop-releases), [Desktop Development (Tauri)](/standards/development/desktop-development), [Security Guidelines](/standards/governance/security-guidelines), [Dependency Management](/standards/development/dependency-management), [CI/CD Pipelines](/standards/development/ci-cd-pipelines), [Code Sharing](/standards/development/code-sharing).
 
 ## Purpose
 
@@ -120,6 +120,9 @@ webPreferences: {
 
 ## Release and auto-update
 
+These rules are Electron's side of the [Desktop Releases](/standards/development/desktop-releases) contract,
+which Tauri apps meet too. A change here changes that contract and the Tauri tooling in the same change.
+
 | Rule | Detail |
 | ---- | ------ |
 | Tagged releases | Each release is a `vX.Y.Z` tag on `main` (`npm version`); the version in `package.json` matches the tag |
@@ -164,6 +167,7 @@ rather than regressions. See [Local Development](/standards/development/local-de
 
 ## Related
 
+- [Desktop Releases](/standards/development/desktop-releases)
 - [Desktop Development (Tauri)](/standards/development/desktop-development)
 - [Security Guidelines](/standards/governance/security-guidelines)
 - [CI/CD Pipelines](/standards/development/ci-cd-pipelines)
