@@ -17,8 +17,8 @@ Related standards: [UI Consistency](/standards/governance/ui-consistency), [Glob
 | **Entry point** | Settings opens from the top bar's settings cog and from ⌘, (Ctrl+,). It is never an item in the main navigation. |
 | **Section list** | Every section listed down the left, always visible, in a fixed order. Related sections may sit under a small overline (Account, Workspace, App). Below the tablet breakpoint the list becomes a picker (a select) above the content. |
 | **Search** | A search field at the top of the section list, on every Settings page. It searches every setting's name, description and keywords, plus section titles. ⌘F (Ctrl+F) focuses it, Enter opens the first result, Escape clears it. |
-| **One section per page** | The right-hand side shows one section at a time, headed by its title (the page's single `h1`) and an optional one-line description. Never one long page of every section; never anchor links down a single page. |
-| **Addresses** | Each section has its own address (`/settings/<section>`), so it can be linked to, bookmarked and opened from the command palette. A link to one setting adds it (`/settings/<section>?setting=<id>`): the section opens, scrolls to the setting and highlights it briefly. An unknown section opens the first one. |
+| **One section per page** | The right-hand side shows one section at a time, headed by its title and an optional one-line description. Never one long page of every section; never anchor links down a single page. |
+| **Addresses** | Each section has its own address, so it can be linked to, bookmarked and opened from the command palette: `/settings/<section>` in apps with client routing (the Electron apps), `/settings?tab=<section>` in the Next.js apps, where the shared component manages it. A link to one setting adds `setting=<id>`: the section opens, scrolls to the setting and highlights it briefly. An unknown section opens the first one. |
 | **Tabs** | Not for Settings. A row of tabs hides sections once they overflow and cannot hold search. |
 | **About** | The last section. Version, platform, data folder where relevant, and Check for updates on desktop. |
 
