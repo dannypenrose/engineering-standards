@@ -407,6 +407,20 @@ npm run test:smoke:staging
 - No orphaned records
 ```
 
+## Deploy the Branch Head, Not a Commit
+
+A manual deploy deploys the head of `main`. Never pin an older commit to get one fix live: once merged, the fix
+is already in `main`, and a commit behind `main` silently undoes everything merged after it, for every user.
+(2026-11-22: a deploy pinned to one pull request's commit rolled an app back past a release merged four minutes
+earlier.)
+
+- A deploy workflow that accepts a commit (`workflow_dispatch` input) must refuse one that is behind `main`
+  unless the run is explicitly marked as a rollback (a `rollback` boolean input), and must list the commits it
+  would undo when it refuses.
+- A rollback says so: name it a rollback, list what it undoes, and confirm before running it.
+- Before any manual deploy, check what is live and what is queued; never start one that would overtake a newer
+  deploy.
+
 ## Rollback Procedures
 
 ### Quick Rollback (< 5 minutes)
