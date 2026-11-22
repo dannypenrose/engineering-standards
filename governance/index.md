@@ -12,6 +12,7 @@ Security, compliance, data governance, and architecture decision standards for a
 | [Feature Flags](/standards/governance/feature-flags) | Progressive rollout, canary deployments, kill switches |
 | [Documentation Standards](/standards/governance/documentation-standards) | README templates, API docs, code comments, changelogs |
 | [Accessibility Standards](/standards/governance/accessibility-standards) | WCAG 2.1 AA compliance, testing procedures |
+| [Settings Pages](/standards/governance/settings-pages) | One Settings layout for every app: sections with search, one section per page, rows that save as they change |
 | [UI Consistency](/standards/governance/ui-consistency) | Page anatomy, one action row, shared behaviours within an app and across a monorepo |
 | [Rich Text Editors](/standards/governance/rich-text-editors) | Which editor for which field, the shared toolbar with emoji, sanitising, display and reactions |
 | [Global Search](/standards/governance/global-search) | The ⌘K palette: layout, states, keyboard, accessibility and access-safe results |

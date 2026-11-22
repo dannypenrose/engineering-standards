@@ -8,7 +8,7 @@ People learn an interface once. When Share sits under the title on one page and 
 
 This standard defines what must be consistent, where the single implementation lives, and how to check it. It is mandatory for all web frontends, and for every app in a monorepo that shares a UI package.
 
-Related standards: [Code Sharing](/standards/development/code-sharing), [Notifications & Confirmations](/standards/governance/notifications-and-confirmations), [Global Search](/standards/governance/global-search), [Rich Text Editors](/standards/governance/rich-text-editors), [Accessibility Standards](/standards/governance/accessibility-standards).
+Related standards: [Code Sharing](/standards/development/code-sharing), [Notifications & Confirmations](/standards/governance/notifications-and-confirmations), [Global Search](/standards/governance/global-search), [Settings Pages](/standards/governance/settings-pages), [Rich Text Editors](/standards/governance/rich-text-editors), [Accessibility Standards](/standards/governance/accessibility-standards).
 
 ## The Two Levels
 
