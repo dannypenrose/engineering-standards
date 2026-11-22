@@ -73,7 +73,7 @@ Use the shared implementation for your platform; never build a Settings layout i
 | Tailwind / Radix apps (Electron apps, the Electron template) | `@axiomstudio/design/react`: `SettingsLayout`, `SettingGroup`, `SettingRow`, `SettingInput`, `useSaveStatus` |
 | MUI apps (The Forge's web apps) | `@forge/ui`: `TabbedSettings` (the sidebar layout with search) |
 | Zenith (web and desktop) | `@forge/zenith-editor`'s Settings plug-in, which follows this standard with its own styles |
-| Mobile (Expo) | A list of sections as the Settings screen, each section its own screen, with search at the top of the list; rows as above |
+| Mobile (Expo) | Up to one screen of settings (about a dozen rows): one Settings screen of titled groups (react-native-paper `List.Section` titles, `List.Item` rows with a description), About last. Beyond that: a list of sections as the Settings screen, each section its own screen, with search at the top of the list |
 
 An app adds sections, never layouts. If the shared implementation lacks something an app needs, change the package.
 
