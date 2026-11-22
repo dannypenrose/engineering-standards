@@ -43,6 +43,7 @@ Every setting is a **row**:
 ### Saving
 
 - **Settings save as they change.** No Save button at the bottom of a page, which people forget, and no unsaved state to lose on navigation.
+- One exception: a set of values that are only valid together (warning and critical thresholds, a connection's host, port and credentials) may save as one group, with Save and Discard on that group only, never on the page.
 - Text fields save when they lose focus or on Enter, never on every key; Escape restores the saved value.
 - The row shows the save itself: "Saving…" while it is in flight, "Saved" for a moment, or the error (announced as an alert) with the control back at its saved value. A toast is not a substitute.
 - A change that is destructive, costs money or affects other people confirms first (see [Notifications & Confirmations](/standards/governance/notifications-and-confirmations)). A change that cannot apply until restart says so in its description.
