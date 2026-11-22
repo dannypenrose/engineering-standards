@@ -15,6 +15,38 @@ Define consistent, fast, and reliable deployment pipelines across all projects. 
 5. **Manual trigger** — Every deploy workflow supports `workflow_dispatch`.
 6. **Quality gates locally, not in CI** — Pre-push hooks handle lint, type-check, and test. CI only builds and deploys.
 7. **SSH keepalive** — Prevent broken pipes during long operations.
+8. **Stay inside the free Actions minutes.** Every private repo on the account shares one monthly allowance (3,000 minutes); a workflow spends from it only for a change that can alter what it builds or ships. See the next section.
+
+## GitHub Actions Minutes Budget
+
+Private repositories share the account's monthly allowance of GitHub Actions minutes (3,000 on the current plan). When it runs out, **every** workflow on the account stops: deploys, CI and scheduled checks, until the next month or a payment. November 2026 used it all by the 22nd: one monorepo's deploys redeployed every app on any lockfile change, and Electron CI ran on macOS.
+
+### How minutes are counted
+
+| Runner | Counts as | Use for |
+|---|---|---|
+| `ubuntu-latest` | 1 minute per minute | Everything that does not need another OS |
+| `windows-latest` | 2 | Nothing routine |
+| `macos-*` | **10** | Only what needs macOS (Swift, Xcode, codesigning, notarisation), in its own workflow scoped by `paths:` |
+
+Every job is rounded **up** to a whole minute, so a job that does nothing but decide to skip still costs one minute. Public repositories are free.
+
+### Rules
+
+1. **Linux unless the step itself needs another OS.** Type-check, lint, test and build of a desktop app run on Linux. A macOS-only step (building Swift helpers, signing) gets its own small workflow, triggered only by `paths:` that can change it.
+2. **Start no runner for a change that cannot alter the output.** CI uses `paths-ignore` for Markdown, docs, `.claude/`, task notes and scripts that the build does not use. Deploy workflows use `paths:` and exclude tests, test config and docs (see the deploy example above).
+3. **Run each check once.** PR CI runs on `pull_request`; it does not run again on `push` to main for the same change. (A repository released by pushing to main, with no PRs, keeps `push`.) Drafts wait: `types: [opened, synchronize, reopened, ready_for_review]` and `if: github.event.pull_request.draft == false`.
+4. **Monorepos check and deploy what a change affects, not everything.** A lockfile or shared-package change maps to the apps that depend on what changed (the lockfile lists each importer's workspace links); everything else is skipped. Never trigger every app on `pnpm-lock.yaml` alone. A git submodule's changes do not appear in the outer repo's diff, so compute them inside the submodule. The-forge's `tools/affected.mjs` does both.
+5. **One app half per change.** A deploy builds and ships the frontend or the backend only when that half is affected; a frontend-only change never rebuilds the backend.
+6. **Cancel superseded CI, queue deploys.** CI uses `cancel-in-progress: true`; deploys never cancel (see Concurrency Control).
+7. **Bound memory, not runners.** Run big builds two at a time on one runner (`turbo --concurrency=2`) rather than fanning out to a matrix of runners, each of which pays its own install and its own rounding.
+8. **Scheduled workflows are rare and short.** A health check or link checker runs at most daily, in seconds, never a build.
+9. **Batch automated updates.** Dependency bots (Renovate, Dependabot) are limited to the packages that matter and grouped into one PR per repo, so one release opens one PR, not one per package.
+10. **Check the spend.** Settings, Billing and plans, Usage, per repository, monthly; a repo using more than its share gets these rules applied first.
+
+### Trade-off
+
+A rule here never removes a check that guards main: a skipped run must be one that could not have failed. When unsure whether a change can alter a build, run it.
 
 ## OneRunner Pattern
 
@@ -668,6 +700,9 @@ No service restart, no install, no build (unless using a static site generator).
 | Hardcoded Node version | Hard to update | `env.NODE_VERSION` |
 | Missing `concurrency:` | Overlapping deploys corrupt state | Always add concurrency group |
 | `SERVER_USER: ops` | Permission conflicts with systemd | Use app-specific deploy user |
+| `runs-on: macos-*` for type-check, lint, test or build | Costs ten times a Linux runner for work that needs no Mac | `ubuntu-latest`; macOS only for macOS-only steps, scoped by `paths:` |
+| Every app deploys on `pnpm-lock.yaml` | One shared-package change rebuilds and ships every app, both halves | Deploy the apps whose dependencies changed (Actions Minutes Budget, rule 4) |
+| CI on both `pull_request` and `push: main` | Runs every check twice | `pull_request` only, unless the repo is released by pushing to main |
 
 ## Checklist
 
@@ -688,6 +723,9 @@ When creating a new deploy workflow, verify:
 - [ ] No lint/test/type-check steps (these belong in pre-push hooks)
 - [ ] Lockfile committed to repo (required for cache key generation)
 - [ ] Server config files excluded from rsync (`appsettings*.json`, `.env`)
+- [ ] `runs-on: ubuntu-latest` (macOS only for a macOS-only step, in its own workflow scoped by `paths:`)
+- [ ] A monorepo deploy runs only for apps the change affects; a lockfile change alone does not deploy every app
+- [ ] PR CI: `pull_request` only, `paths-ignore` for docs and Markdown, drafts skipped, `cancel-in-progress: true`
 
 ## Related Standards
 
