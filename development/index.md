@@ -13,6 +13,7 @@ Tooling, source control, and dependency management standards for all projects.
 | [Dependency Management](/standards/development/dependency-management) | Security scanning, license compliance, update policies |
 | [Deployment Standards](/standards/development/deployment-standards) | Deployment strategies, rollback, smoke testing, zero-downtime |
 | [Environment Management](/standards/development/environment-management) | Environment variables, secrets, .env conventions, environment parity |
+| [Desktop Releases](/standards/development/desktop-releases) | One release, feed, signing and download contract for Tauri and Electron apps |
 | [Electron Development](/standards/development/electron-development) | Electron security baseline, shared shell package, packaging, signing and auto-update |
 | [File Uploads](/standards/development/file-uploads) | Storage, validation, and deleting files with whatever owns them |
 | [API Versioning](/standards/development/api-versioning) | Version lifecycle, breaking changes, deprecation, sunset policies |
