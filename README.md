@@ -34,7 +34,7 @@ These standards are opinionated, production-tested, and designed to enforce cons
 
 | Category | Documents | Covers |
 |----------|-----------|--------|
-| [Governance](./governance) | 14 | Security guidelines (OWASP Top 10), infrastructure security, data governance & privacy, database standards, documentation standards, feature flags, accessibility (WCAG), notifications & confirmations, UI consistency, rich text editors, global search, ADR templates, open-source policy, self-hosting |
+| [Governance](./governance) | 17 | Security guidelines (OWASP Top 10), infrastructure security, authorisation and data scope, data governance & privacy, database standards, documentation standards, feature flags, accessibility (WCAG), notifications & confirmations, UI consistency, mobile design, settings pages, rich text editors, global search, ADR templates, open-source policy, self-hosting |
 
 ### AI-Assisted Development
 

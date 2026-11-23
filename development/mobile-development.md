@@ -4,7 +4,7 @@
 
 ## Purpose
 
-Establish consistent patterns for building, testing, and distributing mobile applications using Expo and React Native within a monorepo environment.
+Establish consistent patterns for building, testing, and distributing mobile applications using Expo and React Native within a monorepo environment. How the app looks and behaves (navigation, sheets, feedback, states, motion) is in [Mobile Design](/standards/governance/mobile-design).
 
 ## Core Principles
 
